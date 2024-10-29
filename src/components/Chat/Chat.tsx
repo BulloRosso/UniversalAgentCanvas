@@ -7,6 +7,7 @@ import { ChatInputPane } from './ChatInputPane';
 import { ChatConfig } from '../../types/config';
 import { ChatMessage } from '../../types/message';
 import { WebSocketProvider, useWebSocket } from '../../context/WebSocketContext';
+import { useTranslation } from 'react-i18next';
 
 interface ChatProps {
   config: ChatConfig;
@@ -22,8 +23,14 @@ interface WebSocketMessage {
 
 // Changed to named export
 export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, onMessageClick }) => {
+  const { t } = useTranslation();
   const typingMessageIdRef = useRef<string | null>(null);
   const messagesRef = useRef(messages);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -107,11 +114,23 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
     };
 
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      <Box   sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '100%', 
+          width: '100%',
+          position: isFullscreen ? 'fixed' : 'relative',
+          top: isFullscreen ? 0 : 'auto',
+          left: isFullscreen ? 0 : 'auto',
+          right: isFullscreen ? 0 : 'auto',
+          bottom: isFullscreen ? 0 : 'auto',
+          zIndex: isFullscreen ? 1300 : 'auto',
+          bgcolor: 'background.paper'
+        }}>
         <ChatHeader
-          backgroundColor={config.backgroundColor}
-          title={config.title}
-          avatar={config.avatar}
+          title={t('tutor')}
+          onToggleFullscreen={handleToggleFullscreen}
+          isFullscreen={isFullscreen}
         />
         <ChatOutputPane
           messages={messages}

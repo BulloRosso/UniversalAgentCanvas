@@ -1,71 +1,64 @@
 // components/Chat/ChatHeader.tsx
 import React from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  IconButton, 
-  Avatar 
-} from '@mui/material';
-import { Close, Refresh } from '@mui/icons-material';
+import { AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import { Fullscreen, FullscreenExit } from '@mui/icons-material';
 
 interface ChatHeaderProps {
-  backgroundColor: string;
   title: string;
-  avatar: string;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
-  backgroundColor,
   title,
-  avatar,
+  onToggleFullscreen,
+  isFullscreen = false
 }) => {
   return (
     <AppBar 
       position="static" 
+      elevation={0}
       sx={{ 
-        backgroundColor, 
-        height: '30px',
-        minHeight: '30px'
+        backgroundColor: 'white',
+        borderBottom: 1,
+        borderColor: 'divider',
       }}
     >
-      <Toolbar sx={{ minHeight: '30px !important' }}>
-        <Avatar
-          src={avatar}
-          sx={{
-            width: 24,
-            height: 24,
-            marginRight: 1,
-            borderRadius: '50%'
-          }}
-        />
+      <Toolbar 
+        sx={{ 
+          minHeight: '48px !important',  // Match Canvas tab height
+          height: '48px'
+        }}
+      >
         <Typography
           variant="subtitle1"
           component="div"
           sx={{
             flexGrow: 1,
             fontWeight: 'bold',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            color: 'text.primary'  // Use theme text color instead of white
           }}
         >
           {title}
         </Typography>
-        <IconButton
-          size="small"
-          edge="end"
-          color="inherit"
-          sx={{ marginLeft: 1 }}
-        >
-          <Refresh fontSize="small" />
-        </IconButton>
-        <IconButton
-          size="small"
-          edge="end"
-          color="inherit"
-          sx={{ marginLeft: 1 }}
-        >
-          <Close fontSize="small" />
-        </IconButton>
+        {onToggleFullscreen && (
+          <IconButton
+            size="small"
+            edge="end"
+            onClick={onToggleFullscreen}
+            sx={{ 
+              color: 'text.primary',
+              marginLeft: 1 
+            }}
+          >
+            {isFullscreen ? (
+              <FullscreenExit fontSize="small" />
+            ) : (
+              <Fullscreen fontSize="small" />
+            )}
+          </IconButton>
+        )}
       </Toolbar>
     </AppBar>
   );

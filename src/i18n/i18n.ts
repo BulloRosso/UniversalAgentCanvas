@@ -11,6 +11,7 @@ const initI18n = async () => {
         hy: {
           translation: {
             // Control Panel
+            "tutor": "ԱԹ ուսուցիչ",
             "controlPanel": "Բարի գալուստ",
             "kiTutor": "ԱԲ ուսուցիչ",
             "enterUrl": "Մուտքագրեք URL",
@@ -51,6 +52,7 @@ const initI18n = async () => {
         en: {
           translation: {
             // Control Panel
+            "tutor": "AI Tutor",
             "controlPanel": "Control Panel",
             "kiTutor": "AI Tutor",
             "enterUrl": "Enter URL",
@@ -92,6 +94,7 @@ const initI18n = async () => {
         },
         de: {
           translation: {
+            "tutor": "AI Tutor",
             // Control Panel
             "controlPanel": "Kontrollzentrum",
             "kiTutor": "KI Professor",
