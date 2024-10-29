@@ -11,6 +11,7 @@ const initI18n = async () => {
         hy: {
           translation: {
             // Control Panel
+            "homework": "Խնդրում եմ սկանավորեք ձեր տնային աշխատանքը",
             "tutor": "ԱԹ ուսուցիչ",
             "controlPanel": "Բարի գալուստ",
             "kiTutor": "ԱԲ ուսուցիչ",
@@ -53,6 +54,7 @@ const initI18n = async () => {
           translation: {
             // Control Panel
             "tutor": "AI Tutor",
+            "homework": "Please scan for your homework",
             "controlPanel": "Control Panel",
             "kiTutor": "AI Tutor",
             "enterUrl": "Enter URL",
@@ -96,6 +98,7 @@ const initI18n = async () => {
           translation: {
             "tutor": "AI Tutor",
             // Control Panel
+            "homework": "Euer Link für die Hausaufgaben - bitte scannen",
             "controlPanel": "Kontrollzentrum",
             "kiTutor": "KI Professor",
             "enterUrl": "URL eingeben",

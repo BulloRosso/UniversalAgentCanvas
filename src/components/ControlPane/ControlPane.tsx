@@ -33,6 +33,7 @@ import { Lesson, Step } from '../../types/lecture';
 import { ChatMessage } from '../../types/message';
 import { lecturePlayerService } from '../../services/lecturePlayerService';
 import AudioPlayer from '../AudioPlayer/AudioPlayer';
+import QRCode from '..//QRCode/QRCode';
 
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide', onComplete?: () => void) => void;
@@ -362,6 +363,8 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
                 mt: 0.5,
                 backgroundColor: 'primary.main',
                 color: 'white',
+                position: 'relative',
+                top:'-4px',
                 '&:hover': {
                   backgroundColor: 'primary.dark',
                 },
@@ -425,7 +428,22 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       )}
       </Stack>
       </Box>
-      <Box sx={{ mt: 2 }}>
+      {selectedLesson && lecture && (
+      <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'row',
+          alignItems: 'center',  
+          justifyContent: 'start', 
+          flex: 1,
+          gap: 2  // Adds spacing between the QR code and text
+        }}>
+        <Box sx={{ mt:2 }}>
+          <QRCode encodeText={selectedLesson} />
+        </Box>
+        <Typography>{t('homework')}</Typography>
+      </Box>
+      )}
+      <Box>
       <AudioPlayer 
         onComplete={() => {
           if (selectedMessage) {
