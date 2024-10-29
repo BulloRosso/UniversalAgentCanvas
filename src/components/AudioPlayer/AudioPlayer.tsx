@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   IconButton, 
   CircularProgress, 
   Box,
-  Paper,
   Typography
 } from '@mui/material';
 import { 
@@ -13,7 +12,7 @@ import {
 } from '@mui/icons-material';
 
 interface AudioPlayerProps {
-  narrative: string;
+  narrative: string | null;
   onComplete?: () => void;
 }
 
@@ -21,109 +20,113 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasAudio, setHasAudio] = useState(false);  // New state to track if we have audio
+  const [hasAudio, setHasAudio] = useState(false);
   const audioRef = useRef(new Audio());
- 
-  const playNarrative = useCallback(async () => {
-    try {
-        setIsLoading(true);
-        setError(null);
+  const currentNarrativeRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    if (!narrative || narrative === currentNarrativeRef.current) return;
+    // Update current narrative
+      currentNarrativeRef.current = narrative;
 
-        console.log('[AudioPlayer] Fetching narrative audio');
-        const response = await fetch('https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api/narrative/tell/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'audio/mpeg',
-            },
-            body: JSON.stringify({ narrative }),
-        });
+    setIsLoading(true);
+    console.log('[AudioPlayer] Starting audio load for:', narrative);
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch audio');
-        }
+    fetch('https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api/narrative/tell/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg',
+      },
+      body: JSON.stringify({ narrative })
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch audio');
+      return response.blob();
+    })
+    .then(blob => {
+      // Clean up previous audio URL if it exists
+      if (audioRef.current.src) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        audioRef.current.src = url;
+      const url = URL.createObjectURL(blob);
+      audioRef.current.src = url;
 
-        audioRef.current.onloadedmetadata = () => {
-            console.log('[AudioPlayer] Audio loaded, starting playback');
-            setIsLoading(false);
-            setHasAudio(true);  // Set hasAudio when loaded
-            audioRef.current.play();
-            setIsPlaying(true);
-        };
-
-        audioRef.current.onended = () => {
-            console.log('[AudioPlayer] Playback completed');
-            setIsPlaying(false);
-            setHasAudio(false);  // Reset hasAudio when done
-            if (onComplete) {
-                onComplete();
-            }
-        };
-
-        audioRef.current.onerror = (e) => {
-            console.error('[AudioPlayer] Playback error:', e);
-            setError('Error playing audio');
-            setIsPlaying(false);
-            setHasAudio(false);  // Reset hasAudio on error
-            setIsLoading(false);
-        };
-    } catch (error) {
-        console.error('[AudioPlayer] Error in playNarrative:', error);
-        setError('Failed to load audio');
+      audioRef.current.onloadedmetadata = () => {
+        console.log('[AudioPlayer] Audio loaded, starting playback');
         setIsLoading(false);
-        setHasAudio(false);  // Reset hasAudio on error
-    }
+        setHasAudio(true);
+        audioRef.current.play();
+        setIsPlaying(true);
+      };
+
+      audioRef.current.onended = () => {
+        console.log('[AudioPlayer] Playback completed');
+        setIsPlaying(false);
+        setHasAudio(false);
+        if (onComplete) {
+          onComplete();
+        }
+      };
+
+      audioRef.current.onerror = () => {
+        console.error('[AudioPlayer] Playback error');
+        setError('Error playing audio');
+        setIsPlaying(false);
+        setHasAudio(false);
+        setIsLoading(false);
+      };
+    })
+    .catch(error => {
+      console.error('[AudioPlayer] Error:', error);
+      setError('Failed to load audio');
+      setIsLoading(false);
+    });
+
+    return () => {
+      console.log('[AudioPlayer] Cleaning up');
+      if (audioRef.current) {
+        audioRef.current.pause();
+        if (audioRef.current.src) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
+        audioRef.current.src = '';
+        audioRef.current.onloadedmetadata = null;
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
+      }
+      setIsPlaying(false);
+      setHasAudio(false);
+      setIsLoading(false);
+      setError(null);
+    };
   }, [narrative, onComplete]);
 
-  // Only start playing if we have a narrative
-  useEffect(() => {
-      if (narrative) {
-          console.log('[AudioPlayer] Starting playback automatically');
-          playNarrative();
-      }
-  }, [narrative, playNarrative]);
-  
-  const togglePlayPause = useCallback(() => {
+  const togglePlayPause = () => {
     if (audioRef.current.src) {
       if (isPlaying) {
         audioRef.current.pause();
+        setIsPlaying(false);
       } else {
         audioRef.current.play();
+        setIsPlaying(true);
       }
-      setIsPlaying(!isPlaying);
-    } else {
-      playNarrative();
     }
-  }, [isPlaying, playNarrative]);
+  };
 
-  const restart = useCallback(() => {
+  const restart = () => {
     if (audioRef.current.src) {
       audioRef.current.currentTime = 0;
       audioRef.current.play();
       setIsPlaying(true);
     }
-  }, []);
+  };
 
-  // Cleanup when unmounting
-  useEffect(() => {
-    return () => {
-        console.log('[AudioPlayer] Cleaning up');
-        if (audioRef.current.src) {
-            URL.revokeObjectURL(audioRef.current.src);
-            audioRef.current.src = '';
-        }
-    };
-  }, []);
-
-  // Only render if we're loading or have active audio
   if (!narrative || (!isLoading && !hasAudio)) {
     return null;
   }
-  
+
   return (
     <Box sx={{ 
       width: '100%', 

@@ -121,7 +121,7 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate })
         <ChatInputPane
           onSendMessage={handleSend}
           disabled={false}
-          speechRecognitionLang="en-US"
+          speechRecognitionLang="hy-AR"
         />
       </Box>
     );

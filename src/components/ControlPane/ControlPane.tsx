@@ -119,76 +119,99 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       });
 
       try {
-          // 1. Display content in canvas first
-          onDisplayContent(
-              step.url, 
-              step.type,  // Pass the type directly without conversion
-              () => handleStepComplete()
-          );
 
-          // 2. Add narrative to chat
-          onChatMessage({
-              id: Date.now().toString(),
-              content: step.narrative,
-              timestamp: new Date(),
-              isUser: false,
-          });
-
-          // 3. Update timers
-          setCurrentStepTime(0);
-          setStepDuration(step.duration);
-
-          // 4. For non-video content, play audio narration
-          if (step.type !== 'video') {
-              try {
-                  setCurrentNarrative(step.narrative);
-
-                  // Wait for audio completion and delay
-                  await new Promise<void>((resolve) => {
-                      const onAudioComplete = () => {
-                          console.log('[ControlPane] Audio narration complete');
-                          setCurrentNarrative(null);  // Clear narrative when done
-                          // Wait 5 seconds after audio completes
-                          setTimeout(() => {
-                              console.log('[ControlPane] Post-audio delay complete');
-                              resolve();
-                          }, 5000);
-                      };
-                      setAudioCompleteCallback(() => onAudioComplete);
-                  });
-
-                  // Move to next step
-                  handleStepComplete();
-              } catch (error) {
-                  console.error('[ControlPane] Error playing narrative:', error);
-                  setCurrentNarrative(null);
-              }
+          // Add a guard to prevent multiple executions
+          if (playbackState.isPlaying && playbackState.currentStepIndex === step.stepNumber - 1) {
+            console.log('[ControlPane] Step already playing, skipping');
+            return;
           }
-          // For video content, handleStepComplete will be called via onVideoComplete callback
+        
+        
+           // 1. Display content in canvas first
+           onDisplayContent(
+             step.url, 
+             step.type,
+             step.type === 'video' ? () => handleStepComplete() : undefined
+           );
 
-      } catch (error) {
-          console.error('[ControlPane] Error playing step:', error);
-      }
+           // 2. Add narrative to chat
+           onChatMessage(step.narrative, false);
+
+           // 3. Update timers
+           setCurrentStepTime(0);
+           setStepDuration(step.duration);
+
+           // 4. For non-video content, play audio narration
+            if (step.type !== 'video') {
+                try {
+                    setCurrentNarrative(step.narrative);
+
+                    // Wait for audio completion
+                    await new Promise<void>((resolve) => {
+                        const onAudioComplete = () => {
+                            console.log('[ControlPane] Audio narration complete');
+                            setCurrentNarrative(null);
+                            setTimeout(() => {
+                                resolve();
+                                handleStepComplete();
+                            }, 1000);  // Reduced delay for better UX
+                        };
+                        setAudioCompleteCallback(() => onAudioComplete);
+                    });
+                } catch (error) {
+                    console.error('[ControlPane] Error playing narrative:', error);
+                    setCurrentNarrative(null);
+                    handleStepComplete();  // Still move to next step even if there's an error
+                }
+            }
+        } catch (error) {
+            console.error('[ControlPane] Error playing step:', error);
+            handleStepComplete();  // Ensure we still move forward even if there's an error
+        }
   };
 
   const handlePlayLesson = async () => {
+    if (!selectedLesson || !lecture) return;
     if (selectedLesson && lecture) {
-      const lesson = lecture.lessons.find(l => l.lessonId === selectedLesson);
-      if (lesson && lesson.presentation.length > 0) {
-        const totalTime = lesson.presentation.reduce((sum, step) => sum + step.duration, 0);
-        setTotalLessonTime(totalTime);
-        setStepDuration(lesson.presentation[0].duration);
-        setCurrentStepTime(0);
 
-        setPlaybackState({
-          isPlaying: true,
-          currentStepIndex: 0,
-          isMuted: false,
-          currentLesson: lesson
-        });
-
-        await playStep(lesson.presentation[0]);
+      // Add a guard to prevent multiple starts
+      if (playbackState.isPlaying) {
+        console.log('[ControlPane] Lesson already playing, skipping start');
+        return;
       }
+      
+      const lesson = lecture.lessons.find(l => l.lessonId === selectedLesson);
+      if (!lesson || lesson.presentation.length === 0) return;
+
+      
+      const totalTime = lesson.presentation.reduce((sum, step) => sum + step.duration, 0);
+      setTotalLessonTime(totalTime);
+      setStepDuration(lesson.presentation[0].duration);
+      setCurrentStepTime(0);
+
+      setPlaybackState({
+        isPlaying: true,
+        currentStepIndex: 0,
+        isMuted: false,
+        currentLesson: lesson
+      });
+
+      // Add a small delay before starting the first step
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        await playStep(lesson.presentation[0]);
+      } catch (error) {
+        console.error('[ControlPane] Error starting lesson:', error);
+        // Reset state on error
+        setPlaybackState({
+          isPlaying: false,
+          currentStepIndex: -1,
+          isMuted: false,
+          currentLesson: null
+        });
+      }
+      
     }
   };
 
@@ -212,10 +235,8 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
               console.log('[ControlPane] Starting next step');
               const nextStep = currentPlaybackState.currentLesson.presentation[nextIndex];
 
-              // Schedule next step after state update
-              setTimeout(() => {
-                  playStep(nextStep);
-              }, 0);
+              // Schedule next step immediately
+              playStep(nextStep);
 
               return {
                   ...currentPlaybackState,
@@ -233,7 +254,6 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
           }
       });
   };
-
   const handleToggleMute = () => {
     setPlaybackState(prev => ({
       ...prev,
@@ -400,51 +420,6 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         </>
       )}
       </Stack>
-
-      {playbackState.isPlaying && playbackState.currentLesson && (
-        <Box sx={{ 
-          mt: 'auto',
-          backgroundColor: 'background.paper',
-          p: 2,
-          borderRadius: 1
-        }}>
-          <Typography variant="subtitle2" gutterBottom>
-            {playbackState.currentLesson.presentation[playbackState.currentStepIndex].title}
-          </Typography>
-
-          <LinearProgress 
-            variant="determinate" 
-            value={(currentStepTime / stepDuration) * 100}
-            sx={{
-              height: 4,
-              backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#1976d2',
-              },
-            }}
-          />
-
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mt: 1
-          }}>
-            <IconButton
-              size="small"
-              onClick={handleToggleMute}
-              color={playbackState.isMuted ? 'default' : 'primary'}
-            >
-              {playbackState.isMuted ? <VolumeOff /> : <VolumeUp />}
-            </IconButton>
-
-            <Typography variant="caption" color="text.secondary">
-              {formatTime(currentStepTime)} / {formatTime(totalLessonTime)}
-            </Typography>
-          </Box>
-         
-        </Box>
-      )}
       </Box>
       <Box sx={{ mt: 2 }}>
       <AudioPlayer 

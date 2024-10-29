@@ -7,7 +7,8 @@ interface SlideTransitionProps {
   children: React.ReactNode;
 }
 
-export const SlideTransition: React.FC<SlideTransitionProps> = ({ in: inProp, children }) => {
+export const SlideTransition = React.forwardRef<HTMLDivElement, SlideTransitionProps>(
+    ({ in: inProp, children }, ref) => {
   return (
     <Slide
       direction="left"
@@ -19,4 +20,6 @@ export const SlideTransition: React.FC<SlideTransitionProps> = ({ in: inProp, ch
       </Box>
     </Slide>
   );
-};
+});
+
+SlideTransition.displayName = 'SlideTransition';

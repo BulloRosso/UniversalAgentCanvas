@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { isYouTubeUrl, extractYouTubeId } from '../../utils/youtube';
 import profImage from '../../assets/robo-prof.png';
 import { SlideTransition } from '../../components/SlideTransition';
-
+import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -142,31 +142,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     }
   };
 
-  const SlideContent: React.FC<{ url: string }> = ({ url }) => {
-    return (
-      <Box
-        sx={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'black',
-        }}
-      >
-        <img
-          src={url}
-          style={{
-            width: '100%',
-            height: 'auto',
-            maxHeight: '100%',
-            objectFit: 'contain',
-          }}
-          alt="Presentation slide"
-        />
-      </Box>
-    );
-  };
+  
 
   
   const YouTubePlayer: React.FC<{ videoId: string, onEnded?: () => void }> = ({ videoId, onEnded }) => {
@@ -272,19 +248,20 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                     {tab.title}
                   </Typography>
                   {index !== 0 && tabs.length > 1 && (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleClose(e, index)}
-                      sx={{
-                        ml: 1,
-                        p: 0.25,
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                        },
+                    <span  // Changed from IconButton to span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClose(e, index);
+                      }}
+                      style={{
+                        cursor: 'pointer',
+                        marginLeft: '4px',
+                        display: 'inline-flex',
+                        padding: '2px',
                       }}
                     >
                       <Close fontSize="small" />
-                    </IconButton>
+                    </span>
                   )}
                 </Box>
               }
@@ -350,7 +327,9 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                   }}>
                     {tab.type === 'slide' ? (
                       <Fade in={!tab.loading} timeout={300}>
-                        <SlideContent url={tab.url} />
+                        <Box sx={{ width: '100%', height: '100%' }}>
+                            <SlideContent url={tab.url} />
+                        </Box>
                       </Fade>
                     ) : tab.type === 'video' ? (
                       tab.youtubeId ? (
