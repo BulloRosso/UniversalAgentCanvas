@@ -11,6 +11,7 @@ interface ChatOutputPaneProps {
   backgroundColor: string;
   userIcon: string;
   agentIcon: string;
+  onMessageClick?: (message: ChatMessage) => void;  
 }
 
 export const ChatOutputPane: React.FC<ChatOutputPaneProps> = ({
@@ -18,6 +19,7 @@ export const ChatOutputPane: React.FC<ChatOutputPaneProps> = ({
   backgroundColor,
   userIcon,
   agentIcon,
+  onMessageClick
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,7 +52,8 @@ export const ChatOutputPane: React.FC<ChatOutputPaneProps> = ({
     }
 
     return (
-      <div className="markdown-content">
+      <div onClick={() => onMessageClick?.(message)}
+           className="markdown-content">
         <ReactMarkdown>{message.content}</ReactMarkdown>
       </div>
     );
@@ -102,6 +105,7 @@ return (
           <Box
             sx={{
               backgroundColor: message.isUser ? '#cfeeff' : '#ffefc5',
+              cursor: !message.isUser ? 'pointer' : '',
               padding: '10px',
               borderRadius: '10px',
               maxWidth: '70%',

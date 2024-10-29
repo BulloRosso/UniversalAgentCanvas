@@ -37,6 +37,8 @@ import AudioPlayer from '../AudioPlayer/AudioPlayer';
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide', onComplete?: () => void) => void;
   onChatMessage: (message: ChatMessage) => void;
+  selectedMessage: ChatMessage | null;
+  onResetSelectedMessage: () => void;
 }
 
 interface PlaybackState {
@@ -48,7 +50,9 @@ interface PlaybackState {
 
 export const ControlPane: React.FC<ControlPaneProps> = ({ 
   onDisplayContent,
-  onChatMessage
+  onChatMessage,
+  selectedMessage,
+  onResetSelectedMessage
 }) => {
   const [url, setUrl] = useState('');
   const [selectedLesson, setSelectedLesson] = useState<string>('');
@@ -424,12 +428,19 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       <Box sx={{ mt: 2 }}>
       <AudioPlayer 
         onComplete={() => {
-          if (audioCompleteCallback) {
+          if (selectedMessage) {
+            onResetSelectedMessage();
+          } else if (audioCompleteCallback) {
             audioCompleteCallback();
             setAudioCompleteCallback(null);
           }
         }}
-        narrative={currentNarrative}
+        onPlaybackStart={() => {
+          if (!selectedMessage) {  // Only emit chat message during normal playback
+            onChatMessage(currentNarrative ?? '', false);
+          }
+        }}
+        narrative={currentNarrative || (selectedMessage?.content ?? null)}
       />
       </Box>  
     </Box>

@@ -43,7 +43,7 @@ const MAX_TABS = 8;
 export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete }) => {
   const { t } = useTranslation();
   const [tabs, setTabs] = useState<CanvasTab[]>([
-    { id: 'content', title: 'Content', type: 'iframe', url: '', loading: false }
+    { id: 'content', title: t('content'), type: 'iframe', url: '', loading: false }
   ]);
   const [activeTab, setActiveTab] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);

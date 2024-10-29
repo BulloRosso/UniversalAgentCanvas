@@ -11,7 +11,7 @@ const initI18n = async () => {
         hy: {
           translation: {
             // Control Panel
-            "controlPanel": "Կառավարման վահանակ",
+            "controlPanel": "Բարի գալուստ",
             "kiTutor": "ԱԲ ուսուցիչ",
             "enterUrl": "Մուտքագրեք URL",
             "displayAsVideo": "Ցուցադրել որպես տեսանյութ",
@@ -61,7 +61,7 @@ const initI18n = async () => {
             "selectLanguage": "Select Language",
 
             // Canvas
-            "content": "Content",
+            "content": "Welcome",
             "youtubePlayer": "YouTube Player",
             "videoPlayer": "Video Player",
             "webContent": "Web Content",
@@ -103,7 +103,7 @@ const initI18n = async () => {
             "selectLanguage": "Sprache auswählen",
 
             // Canvas
-            "content": "Inhalt",
+            "content": "Willkommen",
             "youtubePlayer": "YouTube-Player",
             "videoPlayer": "Video-Player",
             "webContent": "Web-Inhalt",

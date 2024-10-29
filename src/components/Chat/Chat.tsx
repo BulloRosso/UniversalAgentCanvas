@@ -12,6 +12,7 @@ interface ChatProps {
   config: ChatConfig;
   messages: ChatMessage[];
   onMessageUpdate: (messages: ChatMessage[]) => void;
+  onMessageClick?: (message: ChatMessage) => void; 
 }
 
 interface WebSocketMessage {
@@ -20,7 +21,7 @@ interface WebSocketMessage {
 }
 
 // Changed to named export
-export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate }) => {
+export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, onMessageClick }) => {
   const typingMessageIdRef = useRef<string | null>(null);
   const messagesRef = useRef(messages);
 
@@ -117,6 +118,7 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate })
           backgroundColor={config.chatBackgroundColor}
           userIcon={config.chatUserIcon}
           agentIcon={config.chatAgentIcon}
+          onMessageClick={onMessageClick} 
         />
         <ChatInputPane
           onSendMessage={handleSend}

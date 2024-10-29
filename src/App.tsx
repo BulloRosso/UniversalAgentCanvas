@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Box, ThemeProvider, createTheme } from '@mui/material';
 import { Canvas } from './components/Canvas/Canvas';
 import { Chat } from './components/Chat/Chat';
@@ -36,7 +36,14 @@ export const App: React.FC = () => {
   
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [currentStepHandler, setCurrentStepHandler] = React.useState<(() => void) | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
 
+  const handleMessageClick = useCallback((message: ChatMessage) => {
+    if (!message.isUser) {  // Only handle assistant messages
+      setSelectedMessage(message);
+    }
+  }, []);
+  
   const handleDisplayContent = (url: string, type: 'video' | 'iframe', onComplete?: () => void) => {
     console.log('Setting content request:', { url, type });
     setContentRequest({ url, type });
@@ -115,6 +122,8 @@ export const App: React.FC = () => {
                 <ControlPane 
                   onDisplayContent={handleDisplayContent}
                   onChatMessage={handleChatMessage}
+                  selectedMessage={selectedMessage}  
+                  onResetSelectedMessage={() => setSelectedMessage(null)}  
                 />
               </Box>
             </Box>
@@ -139,6 +148,7 @@ export const App: React.FC = () => {
                   config={defaultConfig}
                   messages={messages}
                   onMessageUpdate={handleMessagesUpdate}
+                  onMessageClick={handleMessageClick}  
                 />
               </Box>
             </Box>
