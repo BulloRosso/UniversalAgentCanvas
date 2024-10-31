@@ -151,6 +151,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
     });
 
     return () => {
+      if (narrative) return;
+      
       console.log('[AudioPlayer] Cleaning up');
       if (audioRef.current) {
         audioRef.current.pause();
