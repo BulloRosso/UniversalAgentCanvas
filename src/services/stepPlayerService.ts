@@ -1,7 +1,6 @@
 // src/services/stepPlayerService.ts
 import axios from 'axios';
 import { Step } from '../types/lecture';
-import { TellNarrativeResponse } from '../types/player';
 
 const API_URL = 'https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api';
 
@@ -11,7 +10,7 @@ export class StepPlayerService {
 
   async tellNarrative(narrative: string): Promise<HTMLAudioElement> {
     try {
-      const response = await axios.post<TellNarrativeResponse>(
+      const response = await axios.post(
         `${API_URL}/tellNarrative`,
         { narrative },
         { responseType: 'blob' }

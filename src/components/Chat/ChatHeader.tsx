@@ -1,6 +1,6 @@
 // components/Chat/ChatHeader.tsx
 import React from 'react';
-import { AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, IconButton } from '@mui/material';
 import { Fullscreen, FullscreenExit } from '@mui/icons-material';
 
 interface ChatHeaderProps {
@@ -24,22 +24,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         borderColor: 'divider',
       }}
     >
+     
       <Toolbar 
         sx={{ 
           minHeight: '48px !important',  // Match Canvas tab height
           height: '48px'
         }}
       >
-        <Typography
-          variant="subtitle1"
-          component="div"
-          sx={{
-            flexGrow: 1,
-            fontWeight: 'bold',
-            fontSize: '0.9rem',
-            color: 'text.primary'  // Use theme text color instead of white
-          }}
-        >
+         <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-between'}}>
+        <Typography variant="h6" component="h2" sx={{ color: 'black'}}>
           {title}
         </Typography>
         {onToggleFullscreen && (
@@ -59,6 +52,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             )}
           </IconButton>
         )}
+           </Box>
       </Toolbar>
     </AppBar>
   );

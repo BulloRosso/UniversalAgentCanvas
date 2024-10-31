@@ -30,7 +30,7 @@ const defaultConfig = {
 export const App: React.FC = () => {
   const [contentRequest, setContentRequest] = React.useState<{
     url: string;
-    type: 'video' | 'iframe';
+    type: 'video' | 'iframe' | 'slide';
   } | null>(null);
 
   
@@ -44,7 +44,7 @@ export const App: React.FC = () => {
     }
   }, []);
   
-  const handleDisplayContent = (url: string, type: 'video' | 'iframe', onComplete?: () => void) => {
+  const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide', onComplete?: () => void) => {
     console.log('Setting content request:', { url, type });
     setContentRequest({ url, type });
     setCurrentStepHandler(() => onComplete);

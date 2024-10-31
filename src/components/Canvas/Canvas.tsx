@@ -16,6 +16,7 @@ import { isYouTubeUrl, extractYouTubeId } from '../../utils/youtube';
 import profImage from '../../assets/robo-prof.png';
 import { SlideTransition } from '../../components/SlideTransition';
 import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
