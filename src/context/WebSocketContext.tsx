@@ -1,6 +1,7 @@
 // src/context/WebSocketContext.tsx
 import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
 import { ChatMessage } from '../types/message';
+import { EventBus, EVENTS, UIEventType } from '../events/CustomEvents';
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -79,6 +80,42 @@ export function WebSocketProvider({ children, onMessage }: WebSocketProviderProp
       console.error('Error creating WebSocket:', error);
     }
   }, [onMessage]);
+
+  const handleWebSocketMessage = useCallback((event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data);
+      
+      // Handle UI tool calls
+      if (data.cmd?.startsWith('ui_')) {
+        
+        // Verify the tool call matches the current session
+        if (data.thread_id && data.thread_id !== threadId) {
+          console.error('Thread ID mismatch in UI tool call');
+          return;
+        }
+
+        // Determine the content type based on the command
+        const eventData: UIEventType = {
+          ...data,
+          type: data.cmd === 'ui_showImage' ? 'image' : 'iframe' // Default to iframe if not image
+        };
+
+        // Publish the event
+        EventBus.getInstance().publish(EVENTS.UI_COMMAND, eventData);
+      } else {
+        // Handle other message types
+        onMessage(data);
+      }
+    } catch (error) {
+      console.error('Error processing WebSocket message:', error);
+    }
+  }, [threadId, onMessage]);
+
+  useEffect(() => {
+    if (socket) {
+      socket.onmessage = handleWebSocketMessage;
+    }
+  }, [socket, handleWebSocketMessage]);
 
   const sendMessage = useCallback(async (content: string, attachments?: File[]) => {
     try {

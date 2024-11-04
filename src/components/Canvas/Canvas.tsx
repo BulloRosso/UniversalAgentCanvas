@@ -1,5 +1,5 @@
 // src/components/Canvas/Canvas.tsx
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { 
   Box, 
   Tabs, 
@@ -16,6 +16,7 @@ import { isYouTubeUrl, extractYouTubeId } from '../../utils/youtube';
 import profImage from '../../assets/robo-prof.png';
 import { SlideTransition } from '../../components/SlideTransition';
 import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
+import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -26,7 +27,7 @@ interface TabPanelProps {
 interface CanvasTab {
   id: string;
   title: string;
-  type: 'video' | 'iframe' | 'slide';  // Added 'slide'
+  type: 'video' | 'iframe' | 'slide' | 'image';  // Added 'slide'
   url: string;
   loading: boolean;
   youtubeId?: string;
@@ -35,7 +36,7 @@ interface CanvasTab {
 
 // Update the props interface:
 interface CanvasProps {
-  contentRequest: { url: string; type: 'video' | 'iframe' | 'slide' } | null;
+  contentRequest: { url: string; type: 'video' | 'iframe' | 'slide' | 'image' } | null;
   onVideoComplete?: () => void;
 }
 
@@ -49,19 +50,18 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const [activeTab, setActiveTab] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  useEffect(() => {
-    if (!contentRequest) return;
-
+  // Helper function to handle adding new content
+  const handleNewContent = useCallback((content: { url: string; type: 'video' | 'iframe' | 'slide' | 'image' }) => {
     let newTab: CanvasTab;
 
-    if (contentRequest.type === 'video' && isYouTubeUrl(contentRequest.url)) {
-      const youtubeId = extractYouTubeId(contentRequest.url);
+    if (content.type === 'video' && isYouTubeUrl(content.url)) {
+      const youtubeId = extractYouTubeId(content.url);
       if (youtubeId) {
         newTab = {
           id: `tab-${Date.now()}`,
           title: t('youtubePlayer'),
           type: 'video',
-          url: contentRequest.url,
+          url: content.url,
           loading: true,
           youtubeId
         };
@@ -70,7 +70,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
           id: `tab-${Date.now()}`,
           title: t('error'),
           type: 'video',
-          url: contentRequest.url,
+          url: content.url,
           loading: false,
           error: t('invalidYoutubeUrl')
         };
@@ -78,45 +78,79 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     } else {
       newTab = {
         id: `tab-${Date.now()}`,
-        title: contentRequest.type === 'video' ? t('videoPlayer') : t('webContent'),
-        type: contentRequest.type,
-        url: contentRequest.url,
+        title: content.type === 'video' 
+          ? t('videoPlayer') 
+          : content.type === 'image' 
+            ? t('imageViewer') 
+            : t('webContent'),
+        type: content.type,
+        url: content.url,
         loading: true
       };
     }
 
     setIsTransitioning(true);
 
-    setTimeout(() => {
-      setTabs(currentTabs => {
-        let newTabs;
-        if (currentTabs.length >= MAX_TABS) {
-          // Remove oldest tab (except the first default tab)
-          newTabs = [
-            currentTabs[0],
-            ...currentTabs.slice(2),
-            newTab
-          ];
-        } else {
-          newTabs = [...currentTabs, newTab];
-        }
-        return newTabs;
-      });
-      setActiveTab(tabs.length >= MAX_TABS ? MAX_TABS - 1 : tabs.length);
+          setTimeout(() => {
+            setTabs(currentTabs => {
+              let newTabs;
+              if (currentTabs.length >= MAX_TABS) {
+                // Remove oldest tab (except the first default tab)
+                newTabs = [
+                  currentTabs[0],
+                  ...currentTabs.slice(2),
+                  newTab
+                ];
+              } else {
+                newTabs = [...currentTabs, newTab];
+              }
 
-      setTimeout(() => {
-        setIsTransitioning(false);
+              // Set the active tab to the new tab's index immediately
+              // We can calculate this because we know the new tabs array
+              const newActiveTab = newTabs.length - 1;
+              setTimeout(() => setActiveTab(newActiveTab), 0);
 
-        setTimeout(() => {
-          setTabs(current =>
-            current.map((tab) =>
-              tab.id === newTab.id ? { ...tab, loading: false } : tab
-            )
-          );
+              return newTabs;
+            });
+
+            setTimeout(() => {
+              setIsTransitioning(false);
+
+              setTimeout(() => {
+                setTabs(current =>
+                  current.map((tab) =>
+                    tab.id === newTab.id ? { ...tab, loading: false } : tab
+                  )
+                );
         }, 1500);
       }, 300);
     }, 300);
-  }, [contentRequest, t]);
+  }, [t, tabs.length]);
+
+
+  useEffect(() => {
+    if (contentRequest) {
+      handleNewContent(contentRequest);
+    }
+  }, [contentRequest, handleNewContent]);
+
+  
+  useEffect(() => {
+    // Subscribe to UI commands
+    const unsubscribe = EventBus.getInstance().subscribe(
+      EVENTS.UI_COMMAND,
+      (event: CustomEvent<UIEventType>) => {
+        const { url, type } = event.detail;
+        console.log('Received UI command:', event.detail);
+
+        // Map the command to a content type
+        handleNewContent({ url, type: "image" });
+      }
+    );
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -326,7 +360,26 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                     height: '100%',
                     backgroundColor: 'black'
                   }}>
-                    {tab.type === 'slide' ? (
+                    {tab.type === 'image' ? (
+                      <Box sx={{ 
+                        width: '100%', 
+                        height: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'black'
+                      }}>
+                        <img 
+                          src={tab.url} 
+                          alt="Content"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain'
+                          }}
+                        />
+                      </Box>
+                    ) : tab.type === 'slide' ? (
                       <Fade in={!tab.loading} timeout={300}>
                         <Box sx={{ width: '100%', height: '100%' }}>
                             <SlideContent url={tab.url} />

@@ -69,6 +69,8 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
         typingMessageIdRef.current = null;
         onMessageUpdate(updatedMessages);
       }
+    } else {
+      console.log('Received UI COMMAND', JSON.stringify(wsMessage));
     }
   }, [onMessageUpdate]);
 
