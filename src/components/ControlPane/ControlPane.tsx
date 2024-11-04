@@ -34,6 +34,7 @@ import { ChatMessage } from '../../types/message';
 import { lecturePlayerService } from '../../services/lecturePlayerService';
 import AudioPlayer from '../AudioPlayer/AudioPlayer';
 import QRCode from '..//QRCode/QRCode';
+import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
 
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide', onComplete?: () => void) => void;
@@ -72,6 +73,32 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
     isMuted: false,
     currentLesson: null
   });
+
+  // Listen for narrative commands from EventBus
+  useEffect(() => {
+    const unsubscribe = EventBus.getInstance().subscribe(
+      EVENTS.UI_COMMAND,
+      (event: CustomEvent<UIEventType>) => {
+        
+        if (event.detail.cmd === 'ui_narrative' && event.detail.narrative) {
+          console.log('[ControlPane] Received narrative from EventBus:', event.detail.narrative);
+         
+          // Only update if we're not already playing something
+          //if (!selectedMessage && !currentNarrative) {
+            console.log("Setting narrative from event now")
+            setCurrentNarrative(event.detail.narrative);
+            // If there's additional data like a tool_call_id, we can use it
+            setAudioCompleteCallback(() => () => {
+              console.log('[ControlPane] EventBus narrative complete:', event.detail.tool_call_id);
+              setCurrentNarrative(null);
+            });
+         // }
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [selectedMessage, currentNarrative]);
 
   useEffect(() => {
     let timerId: number;

@@ -69,7 +69,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleMessagesUpdate = useCallback((newMessages: ChatMessage[]) => {
-    console.log('App: Updating messages:', newMessages);
+    // console.log('App: Updating messages:', newMessages);
     setMessages(newMessages);
   }, []);
   
@@ -96,15 +96,29 @@ export const App: React.FC = () => {
               }}
             >
               <Box 
+                className="canvas-container"
                 sx={{ 
                   height: '60%', 
                   backgroundColor: 'white', 
                   borderRadius: 2, 
                   boxShadow: 1, 
                   overflow: 'hidden', 
-                  marginBottom: 2 
-                }}
-              >
+                  marginBottom: 2,
+                  '&:fullscreen': {
+                    height: '100vh',
+                    width: '100vw',
+                    borderRadius: 0,
+                    padding: 0,
+                    backgroundColor: 'black'
+                  },
+                  '&::-webkit-full-screen': {
+                    height: '100vh',
+                    width: '100vw',
+                    borderRadius: 0,
+                    padding: 0,
+                    backgroundColor: 'black'
+                  }
+                }}>
                 <Canvas 
                   contentRequest={contentRequest} 
                   onVideoComplete={handleVideoComplete}

@@ -26,6 +26,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
   const mediaSourceRef = useRef<MediaSource | null>(null);
   const sourceBufferRef = useRef<SourceBuffer | null>(null);
 
+  
   // Safely cleanup MediaSource and SourceBuffer
   const cleanupMediaSource = () => {
     try {

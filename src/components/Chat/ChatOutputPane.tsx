@@ -117,6 +117,7 @@ return (
               '& .markdown-content': {
                 width: '100%', // Added to ensure content fits
                 overflow: 'hidden', // Added to contain content
+                fontSize: '18px',
                 '& h1, & h2, & h3, & h4, & h5, & h6': {
                   margin: '0.5em 0',
                   fontWeight: 'bold',

@@ -8,6 +8,7 @@ import { ChatConfig } from '../../types/config';
 import { ChatMessage } from '../../types/message';
 import { WebSocketProvider, useWebSocket } from '../../context/WebSocketContext';
 import { useTranslation } from 'react-i18next';
+import { EventBus, EVENTS } from '../../events/CustomEvents';
 
 interface ChatProps {
   config: ChatConfig;
@@ -44,7 +45,7 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
   
   const handleWebSocketMessage = useCallback((wsMessage: WebSocketMessage) => {
     console.log('WebSocket received message:', wsMessage);
-    console.log('Current messages in handler:', messagesRef.current);
+    // console.log('Current messages in handler:', messagesRef.current);
 
     if (wsMessage.type === 'ASSISTANT_RESPONSE' && typingMessageIdRef.current) {
       const currentMessages = messagesRef.current;
@@ -65,6 +66,13 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
             : msg
         );
 
+        // Trigger audio narration for the new message
+        EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
+          cmd: 'ui_narrative',
+          narrative: cleanMessageContent(wsMessage.message),
+          tool_call_id: `narrative-${Date.now()}`
+        });
+        
         console.log('Updating messages with response:', updatedMessages);
         typingMessageIdRef.current = null;
         onMessageUpdate(updatedMessages);

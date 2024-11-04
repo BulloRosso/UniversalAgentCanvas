@@ -10,7 +10,7 @@ import {
   Alert,
   Fade
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Close, Fullscreen, FullscreenExit } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { isYouTubeUrl, extractYouTubeId } from '../../utils/youtube';
 import profImage from '../../assets/robo-prof.png';
@@ -49,7 +49,11 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   ]);
   const [activeTab, setActiveTab] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Reference to the canvas container
+  const rootRef = useRef<HTMLDivElement>(null);
+  
   // Helper function to handle adding new content
   const handleNewContent = useCallback((content: { url: string; type: 'video' | 'iframe' | 'slide' | 'image' }) => {
     let newTab: CanvasTab;
@@ -140,11 +144,14 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     const unsubscribe = EventBus.getInstance().subscribe(
       EVENTS.UI_COMMAND,
       (event: CustomEvent<UIEventType>) => {
-        const { url, type } = event.detail;
+        const { cmd, url, type } = event.detail;
         console.log('Received UI command:', event.detail);
 
-        // Map the command to a content type
-        handleNewContent({ url, type: "image" });
+        // Only handle ui_showSlide commands
+        if (cmd === 'ui_showSlide' && url) {
+          // Map the command to a content type
+          handleNewContent({ url, type: "image" });
+        }
       }
     );
 
@@ -177,7 +184,37 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     }
   };
 
-  
+  const handleToggleFullscreen = useCallback(async () => {
+    console.log('[Canvas] Toggle fullscreen clicked');
+
+    // Get the outer container element
+    const canvasContainer = document.getElementsByClassName('canvas-container')[0];
+    if (!canvasContainer) {
+      console.warn('[Canvas] Canvas container not found');
+      return;
+    }
+
+    try {
+      if (!document.fullscreenElement) {
+        console.log('[Canvas] Entering fullscreen');
+        await canvasContainer.requestFullscreen();
+      } else {
+        console.log('[Canvas] Exiting fullscreen');
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error('[Canvas] Error toggling fullscreen:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   
   const YouTubePlayer: React.FC<{ videoId: string, onEnded?: () => void }> = ({ videoId, onEnded }) => {
@@ -267,12 +304,19 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'  
+        }}>
         <Tabs 
           value={activeTab} 
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
+          sx={{ flex: 1 }} 
         >
           {tabs.map((tab, index) => (
             <Tab
@@ -303,6 +347,20 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
             />
           ))}
         </Tabs>
+        {/* Fullscreen Button */}
+        <IconButton 
+          onClick={handleToggleFullscreen}
+          size= "small"
+          sx={{ 
+            mr: 1,
+            color: 'black',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+            }
+          }}
+        >
+          {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+        </IconButton>
       </Box>
 
       <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
@@ -358,7 +416,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                   <Box sx={{ 
                     width: '100%', 
                     height: '100%',
-                    backgroundColor: 'black'
+                    backgroundColor: 'white'
                   }}>
                     {tab.type === 'image' ? (
                       <Box sx={{ 
@@ -367,7 +425,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        backgroundColor: 'black'
+                        backgroundColor: 'white'
                       }}>
                         <img 
                           src={tab.url} 
