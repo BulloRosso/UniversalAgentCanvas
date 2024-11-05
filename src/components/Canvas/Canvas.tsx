@@ -36,7 +36,7 @@ interface CanvasTab {
 
 // Update the props interface:
 interface CanvasProps {
-  contentRequest: { url: string; type: 'video' | 'iframe' | 'slide' | 'image' } | null;
+  contentRequest: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' } | null;
   onVideoComplete?: () => void;
 }
 
@@ -55,7 +55,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const rootRef = useRef<HTMLDivElement>(null);
   
   // Helper function to handle adding new content
-  const handleNewContent = useCallback((content: { url: string; type: 'video' | 'iframe' | 'slide' | 'image' }) => {
+  const handleNewContent = useCallback((content: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' }) => {
     let newTab: CanvasTab;
 
     if (content.type === 'video' && isYouTubeUrl(content.url)) {
@@ -85,7 +85,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
         title: content.type === 'video' 
           ? t('videoPlayer') 
           : content.type === 'image' 
-            ? t('imageViewer') 
+            ? content.title 
             : t('webContent'),
         type: content.type,
         url: content.url,
@@ -144,13 +144,13 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     const unsubscribe = EventBus.getInstance().subscribe(
       EVENTS.UI_COMMAND,
       (event: CustomEvent<UIEventType>) => {
-        const { cmd, url, type } = event.detail;
+        const { cmd, title, url, type } = event.detail;
         console.log('Received UI command:', event.detail);
 
         // Only handle ui_showSlide commands
         if (cmd === 'ui_showSlide' && url) {
           // Map the command to a content type
-          handleNewContent({ url, type: "image" });
+          handleNewContent({ title, url, type: "image" });
         }
       }
     );

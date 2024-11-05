@@ -1,6 +1,7 @@
 // src/events/CustomEvents.ts
 export type UIEventType = {
   cmd: string;
+  title: string;
   url: string;
   narrative?: string;
   tool_call_id: string;
