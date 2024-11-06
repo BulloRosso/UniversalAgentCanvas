@@ -17,6 +17,7 @@ import profImage from '../../assets/robo-prof.png';
 import { SlideTransition } from '../../components/SlideTransition';
 import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
 import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
+import TestQuestion from './TestQuestion';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -272,6 +273,21 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     );
   };
 
+  const question = {
+    id: "Q1",
+    question: "What is the color of the rainbow?",
+    type: "multiple-choice",
+    choices: [
+      { id: 1, text: "green" },
+      { id: 2, text: "red" },
+      { id: 3, text: "purple" },
+      { id: 4, text: "blue" },
+      { id: 5, text: "colorful" }
+    ],
+    answerId: [4,2],
+    points: 4
+  };
+  
   // Add type definitions for the YouTube IFrame API
   declare global {
     interface Window {
@@ -487,6 +503,8 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                     color: 'text.secondary',
                   }}
                 >
+                  { /* }
+                  <TestQuestion {...question} /> */}
                    <img src={profImage} style={{ height: '80%'}} alt="No content" />
                 </Box>
               )}

@@ -28,6 +28,7 @@ export class EventBus {
   }
 
   public publish(eventName: string, data: any): void {
+    console.debug("Published: " + eventName, data)
     const event = new CustomEvent(eventName, { detail: data });
     this.eventTarget.dispatchEvent(event);
   }
