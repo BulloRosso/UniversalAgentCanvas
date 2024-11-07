@@ -27,7 +27,7 @@ export function WebSocketProvider({ children, onMessage }: WebSocketProviderProp
 
   const connectWebSocket = useCallback(async (tid: string) => {
     try {
-      const wsUrl = `wss://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/socket?threadId=${tid}`;
+      const wsUrl = import.meta.env.VITE_WS_URL + `socket?threadId=${tid}`;
       console.log('Connecting to WebSocket with URL:', wsUrl);
 
       const ws = new WebSocket(wsUrl);
@@ -119,7 +119,7 @@ export function WebSocketProvider({ children, onMessage }: WebSocketProviderProp
 
   const sendMessage = useCallback(async (content: string, attachments?: File[]) => {
     try {
-      const response = await fetch('https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api/chat', {
+      const response = await fetch(import.meta.env.VITE_API_URL + 'api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

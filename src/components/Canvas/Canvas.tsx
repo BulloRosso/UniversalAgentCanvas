@@ -288,25 +288,6 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     points: 4
   };
   
-  // Add type definitions for the YouTube IFrame API
-  declare global {
-    interface Window {
-      YT: {
-        Player: new (
-          element: HTMLIFrameElement | string,
-          config: {
-            events: {
-              onStateChange: (event: { data: number }) => void;
-            };
-          }
-        ) => {
-          destroy: () => void;
-        };
-      };
-      onYouTubeIframeAPIReady: () => void;
-    }
-  }
-
   return (
     <Box
       sx={{

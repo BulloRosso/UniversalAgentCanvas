@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { Step } from '../types/lecture';
 
-const API_URL = 'https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api';
+const API_URL = import.meta.env.VITE_API_URL + 'api';
 
 export class StepPlayerService {
   private audioElement: HTMLAudioElement | null = null;

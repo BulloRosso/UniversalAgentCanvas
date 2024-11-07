@@ -29,8 +29,9 @@ const defaultConfig = {
 
 export const App: React.FC = () => {
   const [contentRequest, setContentRequest] = React.useState<{
+    title: string;
     url: string;
-    type: 'video' | 'iframe' | 'slide';
+    type: 'video' | 'iframe' | 'slide' | 'image';
   } | null>(null);
 
   
@@ -44,9 +45,12 @@ export const App: React.FC = () => {
     }
   }, []);
   
-  const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide', onComplete?: () => void) => {
+  const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => {
     console.log('Setting content request:', { url, type });
-    setContentRequest({ url, type });
+    setContentRequest({ 
+       title: type === 'video' ? 'Video' : type === 'image' ? 'Image' : 'Content',
+      url, 
+      type });
     setCurrentStepHandler(() => onComplete);
   };
 
@@ -64,6 +68,7 @@ export const App: React.FC = () => {
       content,
       timestamp: new Date(),
       isUser,
+      isTyping: false  
     };
     setMessages(prev => [...prev, newMessage]);
   }, []);
@@ -135,7 +140,7 @@ export const App: React.FC = () => {
               >
                 <ControlPane 
                   onDisplayContent={handleDisplayContent}
-                  onChatMessage={handleChatMessage}
+                  onChatMessage={(message: ChatMessage) => setMessages(prev => [...prev, message])}
                   selectedMessage={selectedMessage}  
                   onResetSelectedMessage={() => setSelectedMessage(null)}  
                 />

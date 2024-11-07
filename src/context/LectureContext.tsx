@@ -26,7 +26,7 @@ export const LectureProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const fetchLecture = async () => {
       try {
-        const response = await axios.get('https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api/lecture/OCR-101');
+        const response = await axios.get(import.meta.env.VITE_API_URL + 'api/lecture/OCR-101');
         setLecture(response.data);
         setLoading(false);
       } catch (err) {

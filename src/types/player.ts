@@ -1,61 +1,54 @@
 // src/types/player.ts
-export interface PlaybackState {
-  isPlaying: boolean;
-  currentStepIndex: number;
-  isMuted: boolean;
-  currentLesson: Lesson | null;
-}
-
 export class AudioStreamPlayer {
-  private audioContext: AudioContext;
-  private audioSource: MediaElementAudioSourceNode | null = null;
-  private audioElement: HTMLAudioElement | null = null;
-  private onEndedCallback: (() => void) | null = null;
+  private audio: HTMLAudioElement;
+  private endedCallback: (() => void) | null = null;
 
   constructor() {
-    this.audioContext = new AudioContext();
+    this.audio = new Audio();
+    this.audio.addEventListener('ended', () => {
+      if (this.endedCallback) {
+        this.endedCallback();
+      }
+    });
   }
 
-  async playStream(streamUrl: string): Promise<void> {
+  async playStream(url: string): Promise<void> {
+    this.audio.src = url;
     try {
-      if (this.audioElement) {
-        this.audioElement.pause();
-      }
-
-      this.audioElement = new Audio();
-      this.audioElement.src = streamUrl;
-
-      if (this.onEndedCallback) {
-        this.audioElement.onended = this.onEndedCallback;
-      }
-
-      this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
-      this.audioSource.connect(this.audioContext.destination);
-
-      await this.audioElement.play();
+      await this.audio.play();
     } catch (error) {
-      console.error('Error playing audio stream:', error);
+      console.error('Error playing audio:', error);
       throw error;
     }
   }
 
+  onEnded(callback: () => void) {
+    this.endedCallback = callback;
+  }
+
   setMuted(muted: boolean) {
-    if (this.audioElement) {
-      this.audioElement.muted = muted;
-    }
+    this.audio.muted = muted;
   }
 
   stop() {
-    if (this.audioElement) {
-      this.audioElement.pause();
-      this.audioElement.src = '';
-    }
+    this.audio.pause();
+    this.audio.currentTime = 0;
+    this.audio.src = '';
   }
+}
 
-  onEnded(callback: () => void) {
-    this.onEndedCallback = callback;
-    if (this.audioElement) {
-      this.audioElement.onended = callback;
-    }
-  }
+// Also include Step and Lesson interfaces if they're needed in lecturePlayerService
+export interface Step {
+  stepNumber: number;
+  title: string;
+  type: 'video' | 'iframe' | 'slide' | 'image';
+  url: string;
+  narrative: string;
+  duration: number;
+}
+
+export interface Lesson {
+  lessonId: string;
+  title: string;
+  presentation: Step[];
 }

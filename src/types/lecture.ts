@@ -4,7 +4,7 @@ export interface Step {
   title: string;
   duration: number;
   narrative: string;
-  type: 'video' | 'webpage' | 'slide';
+  type: 'video' | 'iframe' | 'slide';
   url: string;
 }
 

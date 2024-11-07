@@ -32,13 +32,13 @@ import { useLecture } from '../../context/LectureContext';
 import { Lesson, Step } from '../../types/lecture';
 import { ChatMessage } from '../../types/message';
 import { lecturePlayerService } from '../../services/lecturePlayerService';
-import AudioPlayer from '../AudioPlayer/AudioPlayer';
+import AudioPlayer, { AudioPlayerProps } from '../AudioPlayer/AudioPlayer';  
 import QRCode from '..//QRCode/QRCode';
 import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
 
 interface ControlPaneProps {
-  onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide', onComplete?: () => void) => void;
-  onChatMessage: (message: ChatMessage) => void;
+  onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => void;
+  onChatMessage: (chatmessage: ChatMessage) => void;
   selectedMessage: ChatMessage | null;
   onResetSelectedMessage: () => void;
 }
@@ -74,6 +74,16 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
     currentLesson: null
   });
 
+  const createChatMessage = (content: string, isUser: boolean): ChatMessage => {
+    return {
+      id: Date.now().toString(),
+      content,
+      timestamp: new Date(),
+      isUser,
+      isTyping: false
+    };
+  };
+  
   // Listen for narrative commands from EventBus
   useEffect(() => {
     const unsubscribe = EventBus.getInstance().subscribe(
@@ -167,7 +177,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
            );
 
            // 2. Add narrative to chat
-           onChatMessage(step.narrative, false);
+           onChatMessage(createChatMessage(step.narrative, false));
 
            // 3. Update timers
            setCurrentStepTime(0);
@@ -482,7 +492,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         }}
         onPlaybackStart={() => {
           if (!selectedMessage) {  // Only emit chat message during normal playback
-            onChatMessage(currentNarrative ?? '', false);
+            onChatMessage(createChatMessage(currentNarrative, false));
           }
         }}
         narrative={currentNarrative || (selectedMessage?.content ?? null)}

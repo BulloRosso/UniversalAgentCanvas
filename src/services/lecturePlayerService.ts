@@ -13,7 +13,7 @@ export class LecturePlayerService {
   async tellNarrative(narrative: string): Promise<void> {
     try {
       const response = await axios.post(
-        'https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api/tellNarrative',
+        import.meta.env.VITE_API_URL + 'api/tellNarrative',
         { narrative },
         { 
           responseType: 'blob',

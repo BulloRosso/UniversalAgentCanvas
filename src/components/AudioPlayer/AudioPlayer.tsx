@@ -11,9 +11,10 @@ import {
   RestartAlt 
 } from '@mui/icons-material';
 
-interface AudioPlayerProps {
+export interface AudioPlayerProps {
   narrative: string | null;
   onComplete?: () => void;
+  onPlaybackStart?: () => void;
 }
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
@@ -68,7 +69,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
         // Create source buffer when MediaSource is ready
         sourceBufferRef.current = mediaSource.addSourceBuffer('audio/mpeg');
 
-        const response = await fetch('https://dee09cc9-22ed-465f-8839-fe8c5be2f694-00-hm6w1lz6dlro.riker.replit.dev/api/narrative/tell/', {
+        const response = await fetch(import.meta.env.VITE_API_URL + 'api/narrative/tell/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

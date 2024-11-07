@@ -1,7 +1,7 @@
 // src/components/Chat/ChatOutputPane.tsx
 import React, { useEffect, useRef } from 'react';
 import { Box, Avatar } from '@mui/material';
-import ReactMarkdown from 'react-markdown';
+import { marked } from 'marked';
 import profIcon from '../../assets/robo-prof-icon.png';
 import { TypingIndicator } from './TypingIndicator';
 import { ChatMessage } from '../../types/message';
@@ -54,7 +54,7 @@ export const ChatOutputPane: React.FC<ChatOutputPaneProps> = ({
     return (
       <div onClick={() => onMessageClick?.(message)}
            className="markdown-content">
-        <ReactMarkdown>{message.content}</ReactMarkdown>
+        <div dangerouslySetInnerHTML={{ __html: marked(message.content) }} />
       </div>
     );
   };
