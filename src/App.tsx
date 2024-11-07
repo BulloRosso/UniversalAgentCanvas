@@ -8,6 +8,7 @@ import './i18n/i18n';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n/i18n';
 import { LectureProvider } from './context/LectureContext';
+import { StudentProvider } from './context/StudentContext';
 import { ChatMessage } from './types/message';
 import profImage from './assets/robo-prof.png';
 import defaultUserIcon from './assets/user-icon.png'; // You'll need to add this image
@@ -80,6 +81,7 @@ export const App: React.FC = () => {
   
   return (
     <I18nextProvider i18n={i18n}>
+      <StudentProvider>
       <LectureProvider>
         <ThemeProvider theme={theme}>
           <Box
@@ -174,6 +176,7 @@ export const App: React.FC = () => {
           </Box>
         </ThemeProvider>
       </LectureProvider>
+      </StudentProvider>
     </I18nextProvider>
   );
 };

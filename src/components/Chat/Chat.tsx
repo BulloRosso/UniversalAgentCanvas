@@ -9,6 +9,7 @@ import { ChatMessage } from '../../types/message';
 import { WebSocketProvider, useWebSocket } from '../../context/WebSocketContext';
 import { useTranslation } from 'react-i18next';
 import { EventBus, EVENTS } from '../../events/CustomEvents';
+import { useStudent } from '../../context/StudentContext';
 
 interface ChatProps {
   config: ChatConfig;
@@ -28,7 +29,9 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
   const typingMessageIdRef = useRef<string | null>(null);
   const messagesRef = useRef(messages);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
+  const [isFirstMessage, setIsFirstMessage] = useState(true); 
+  const student = useStudent(); 
+  
   const handleToggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
   }, []);
@@ -90,9 +93,7 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
         const typingId = `typing-${Date.now()}`;
         typingMessageIdRef.current = typingId;
 
-        console.log('Sending message:', content);
-        console.log('Current messages before update:', messages);
-
+       
         const userMessage: ChatMessage = {
           id: `user-${Date.now()}`,
           content,
@@ -112,7 +113,15 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
         console.log('Updating messages with typing indicator:', newMessages);
         onMessageUpdate(newMessages);
 
-        await sendMessage(content, attachments);
+        // Prepare the actual content to send to the API
+        let apiContent = content;
+        if (isFirstMessage) {
+          const statusDescription = student.getStatusDescription();
+          apiContent = `${statusDescription}\n\nUser Message: ${content}`;
+          setIsFirstMessage(false); // Update the flag after first message
+        }
+        
+        await sendMessage(apiContent, attachments);
       } catch (error) {
         console.error('Error sending message:', error);
         if (typingMessageIdRef.current) {

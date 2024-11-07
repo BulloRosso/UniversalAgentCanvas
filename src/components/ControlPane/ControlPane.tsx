@@ -35,6 +35,7 @@ import { lecturePlayerService } from '../../services/lecturePlayerService';
 import AudioPlayer, { AudioPlayerProps } from '../AudioPlayer/AudioPlayer';  
 import QRCode from '..//QRCode/QRCode';
 import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
+import { useStudent } from '../../context/StudentContext';
 
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => void;
@@ -296,6 +297,25 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
           }
       });
   };
+
+  const StudentDashboard = () => {
+    const student = useStudent();
+
+    // Use useEffect to set the initial state only once
+    useEffect(() => {
+      student.setName('Ralph');
+      student.setLocation('Berlin');
+      student.setActiveLecture('OCR Foundations');
+      student.setActiveLesson('OCR Input methods');
+      student.addAnsweredQuestion({ questionId: 'Q1', score: 0 });
+    }, []); // Empty dependency array means this runs only once on mount
+
+    // Get status description with current date/time
+    const status = student.getStatusDescription();
+
+    return <div>{status}</div>;
+  }
+  
   const handleToggleMute = () => {
     setPlaybackState(prev => ({
       ...prev,
@@ -497,7 +517,8 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         }}
         narrative={currentNarrative || (selectedMessage?.content ?? null)}
       />
-      </Box>  
+      </Box> 
+      <StudentDashboard />
     </Box>
   );
 };

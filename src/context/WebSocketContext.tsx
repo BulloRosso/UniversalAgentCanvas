@@ -119,6 +119,7 @@ export function WebSocketProvider({ children, onMessage }: WebSocketProviderProp
 
   const sendMessage = useCallback(async (content: string, attachments?: File[]) => {
     try {
+     
       const response = await fetch(import.meta.env.VITE_API_URL + 'api/chat', {
         method: 'POST',
         headers: {
