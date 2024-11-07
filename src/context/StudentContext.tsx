@@ -107,9 +107,40 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
     }
 
-    console.debug(`${basicInfo}${lectureInfo}${questionsInfo}`)
+    let questionList = `
+    You have the following questions for the current lesson to test the students knowledge. In a response you can a) ask a question or b) show a slide using or c) do nothing and answer only. Use function calls IF the context is closely related to one of the following entities in the question:
+    ----------------------
+    * Question Q1 is "What does OCR stand for?"
+* Question Q2 is "Which of these are key steps in the OCR process?"
+* Question Q3 is "Order the following OCR preprocessing steps from first to last:"
+* Question Q4 is "Which resolution is typically recommended as minimum for OCR processing?"
+* Question Q5 is "Match these OCR types with their primary use cases:"
+* Question Q6 is "Which of these factors can affect OCR accuracy?"
+* Question Q7 is "What is the primary purpose of binarization in OCR?"
+* Question Q8 is "Order the following OCR accuracy improvement steps from most to least important:"
+* Question Q9 is "Which preprocessing techniques are commonly used in OCR?"
+* Question Q10 is "What is the main difference between OCR and ICR?"
+* Question Q11 is "Match the OCR terminology with its definition:"
+* Question Q12 is "Which file formats are typically supported by OCR software?"
+* Question Q13 is "What is the best color mode for OCR processing?"
+* Question Q14 is "Order these stages in OCR character recognition from first to last:"
+* Question Q15 is "Which types of text can modern OCR systems process?"
+* Question Q16 is "What is the purpose of zoning in OCR?"
+* Question Q17 is "Match these OCR challenges with their solutions:"
+* Question Q18 is "Which elements can affect OCR template matching?"
+* Question Q19 is "What is the main advantage of neural network-based OCR over template matching?"
+* Question Q20 is "Order these OCR output formats by increasing complexity:"
+* Question Q21 is "Which factors influence OCR processing speed?"
+* Question Q22 is "What is the primary purpose of OCR dictionaries?"
+* Question Q23 is "Match these OCR applications with their industries:"
+* Question Q24 is "Which languages can modern OCR systems typically process?"
+* Question Q25 is "What is the best approach for handling multi-column text in OCR?"
+-------------------
+    `;
+
+    console.debug(`${basicInfo}\n${lectureInfo}\n${questionsInfo}`)
     
-    return `${basicInfo}${lectureInfo}${questionsInfo}`;
+    return `${basicInfo}\n${lectureInfo}\n${questionsInfo}\n${questionList}`;
   };
 
   return (

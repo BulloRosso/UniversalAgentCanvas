@@ -136,6 +136,42 @@ const TestQuestion: React.FC<QuestionProps> = ({
     }
   };
 
+  const generateResponseText = (isCorrect: boolean): string => {
+    if (isCorrect) {
+      return "#### Great! That is the right answer! 🎉";
+    }
+
+    let correctAnswerText = "";
+    switch (type) {
+      case 'single-choice':
+        const correctChoice = choices.find(c => c.id === answerId[0]);
+        correctAnswerText = `* ${correctChoice?.text}`;
+        break;
+
+      case 'multiple-choice':
+        correctAnswerText = answerId
+          .map(id => choices.find(c => c.id === id))
+          .filter(choice => choice) // Remove any undefined values
+          .map(choice => `* ${choice?.text}`)
+          .join('\n');
+        break;
+
+      case 'drag-and-drop':
+        correctAnswerText = answerId
+          .map(id => choices.find(c => c.id === id))
+          .filter(choice => choice) // Remove any undefined values
+          .map((choice, index) => `${index + 1}. ${choice?.text}`)
+          .join('\n');
+        break;
+    }
+
+    return `#### Not quite correct
+
+  The right answer would have been:
+
+  ${correctAnswerText}`;
+  };
+  
   const handleSubmit = () => {
     const eventBus = EventBus.getInstance();
     let isCorrect = false;
@@ -155,7 +191,8 @@ const TestQuestion: React.FC<QuestionProps> = ({
   
     eventBus.publish('answer-event', {
       questionId: id,
-      points: isCorrect ? points : 0
+      points: isCorrect ? points : 0,
+      responseText: generateResponseText(isCorrect)
     });
 
     setIsSubmitted(true);
@@ -218,7 +255,7 @@ const TestQuestion: React.FC<QuestionProps> = ({
   );
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, margin: 'auto' }}>
+    <Box sx={{ p: 3, maxWidth: '800px', minWidth: '800px', margin: 'auto' }}>
       <Typography variant="h6" align="left" gutterBottom>
         {question}
       </Typography>

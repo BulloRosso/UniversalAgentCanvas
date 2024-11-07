@@ -18,6 +18,7 @@ import { SlideTransition } from '../../components/SlideTransition';
 import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
 import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
 import TestQuestion from './TestQuestion';
+import axios from 'axios';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -28,20 +29,41 @@ interface TabPanelProps {
 interface CanvasTab {
   id: string;
   title: string;
-  type: 'video' | 'iframe' | 'slide' | 'image';  // Added 'slide'
+  type: 'video' | 'iframe' | 'slide' | 'image' | 'question'; 
   url: string;
   loading: boolean;
   youtubeId?: string;
   error?: string;
 }
 
+// Add interfaces for the question data structure
+interface Choice {
+  id: number;
+  text: string;
+}
+
+interface Question {
+  id: string;
+  question: string;
+  type: 'single-choice' | 'multiple-choice' | 'drag-and-drop';
+  choices: Choice[];
+  answerId: number[];
+  points: number;
+  placeholders?: string[];
+}
+
+interface QuestionsData {
+  questions: Question[];
+}
+
 // Update the props interface:
 interface CanvasProps {
-  contentRequest: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' } | null;
+  contentRequest: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' | 'question' } | null;
   onVideoComplete?: () => void;
 }
 
 const MAX_TABS = 8;
+const QUESTIONS_API_URL = import.meta.env.VITE_API_URL + 'api/questions/L1'; // TODO lesson hardcoded
 
 export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete }) => {
   const { t } = useTranslation();
@@ -51,12 +73,78 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const [activeTab, setActiveTab] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  
   // Reference to the canvas container
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Fetch questions from the API
+  const fetchQuestions = useCallback(async () => {
+    if (questions.length > 0) return; // Return if questions are already loaded
+
+    setQuestionsLoading(true);
+    setQuestionsError(null);
+
+    try {
+      const response = await axios.get<QuestionsData>(QUESTIONS_API_URL);
+      console.log("--- url " + QUESTIONS_API_URL + " returns ---")
+      console.log(response.data.questions)
+      setQuestions(response.data.questions);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      setQuestionsError('Failed to load questions');
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, []); // Empty dependency array as this function doesn't depend on any props or state
+
+  // Find question by ID
+  const findQuestionById = useCallback((questionId: string): Question | undefined => {
+    console.log('Finding question:', questionId, 'in questions:', questions);
+    return questions.find(q => q.id === questionId);
+  }, [questions]);
+
+  // Handle question command
+  const handleQuestionCommand = useCallback(async (questionId: string) => {
+    if (questions.length === 0) {
+      await fetchQuestions();
+    }
+
+    const question = findQuestionById(questionId);
+    if (!question) {
+      console.error(`Question ${questionId} not found`);
+      return;
+    }
+
+    const newTab: CanvasTab = {
+      id: `question-${Date.now()}`,
+      title: `Question ${questionId}`,
+      type: 'question',
+      url: questionId,
+      loading: false,
+      questionData: question
+    };
+
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setTabs(currentTabs => {
+        let newTabs;
+        if (currentTabs.length >= MAX_TABS) {
+          newTabs = [currentTabs[0], ...currentTabs.slice(2), newTab];
+        } else {
+          newTabs = [...currentTabs, newTab];
+        }
+        setTimeout(() => setActiveTab(newTabs.length - 1), 0);
+        return newTabs;
+      });
+      setIsTransitioning(false);
+    }, 300);
+  }, [questions, findQuestionById, fetchQuestions]);
   
   // Helper function to handle adding new content
-  const handleNewContent = useCallback((content: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' }) => {
+  const handleNewContent = useCallback((content: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' | 'question'}) => {
     let newTab: CanvasTab;
 
     if (content.type === 'video' && isYouTubeUrl(content.url)) {
@@ -132,6 +220,10 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     }, 300);
   }, [t, tabs.length]);
 
+  // Load questions when component mounts
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]);
 
   useEffect(() => {
     if (contentRequest) {
@@ -152,13 +244,15 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
         if (cmd === 'ui_showSlide' && url) {
           // Map the command to a content type
           handleNewContent({ title, url, type: "image" });
+        } else if (cmd === 'ui_askQuestion') {
+          handleQuestionCommand(event.detail.questionId);
         }
       }
     );
 
     // Cleanup subscription
     return () => unsubscribe();
-  }, []);
+  }, [questions]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -434,7 +528,18 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                           }}
                         />
                       </Box>
-                    ) : tab.type === 'slide' ? (
+                    ) : tab.type === 'question' ? (
+                      <Box sx={{ 
+                        width: '100%', 
+                        height: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'white'
+                      }}>
+                        <TestQuestion {...tab.questionData} />
+                      </Box>
+                    )  : tab.type === 'slide' ? (
                       <Fade in={!tab.loading} timeout={300}>
                         <Box sx={{ width: '100%', height: '100%' }}>
                             <SlideContent url={tab.url} />

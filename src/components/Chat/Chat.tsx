@@ -40,6 +40,41 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
     messagesRef.current = messages;
   }, [messages]);
 
+  // New effect for handling answer events
+  useEffect(() => {
+    const handleAnswerEvent = (event: CustomEvent<AnswerEvent>) => {
+      const { responseText } = event.detail;
+
+      // Create a new message for the answer response
+      const answerMessage: ChatMessage = {
+        id: `answer-${Date.now()}`,
+        content: responseText,
+        timestamp: new Date(),
+        isUser: false,
+        isTyping: false
+      };
+
+      // Update messages with the new answer response
+      onMessageUpdate([...messagesRef.current, answerMessage]);
+
+      // Trigger audio narration for the answer response
+      EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
+        cmd: 'ui_narrative',
+        narrative: responseText.replace(/[#*]/g, ''), // Remove markdown symbols for narration
+        tool_call_id: `narrative-${Date.now()}`
+      });
+    };
+
+    // Subscribe to answer events
+    const unsubscribe = EventBus.getInstance().subscribe(
+      'answer-event',
+      (event: CustomEvent) => handleAnswerEvent(event)
+    );
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, [onMessageUpdate]);
+  
   const cleanMessageContent = (content: string): string => {
     // Remove source markers like 【4:0†source】 or similar variations
     return content.replace(/【\d+:\d+†source】/g, '')
