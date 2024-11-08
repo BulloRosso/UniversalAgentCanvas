@@ -188,7 +188,6 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
            onChatMessage(createChatMessage(step.narrative, false));
 
            // 3. Update timers
-           setCurrentStepTime(0);
            setStepDuration(step.duration);
 
            // 4. For non-video content, play audio narration
@@ -235,9 +234,9 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
 
       
       const totalTime = lesson.presentation.reduce((sum, step) => sum + step.duration, 0);
-      setTotalLessonTime(totalTime);
+     
       setStepDuration(lesson.presentation[0].duration);
-      setCurrentStepTime(0);
+
 
       setPlaybackState({
         isPlaying: true,
@@ -294,7 +293,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
               };
           } else {
               console.log('[ControlPane] Lesson complete, stopping playback');
-              setCurrentStepTime(0);
+            
               return {
                   isPlaying: false,
                   currentStepIndex: -1,
@@ -355,7 +354,6 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        padding: 2,
       }}
     >
       {/* Main Content */}
@@ -365,7 +363,10 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          mb: 2
+          paddingLeft: '12px',
+          paddingRight: '10px',
+          paddingTop: '6px',
+          paddingBottom: '6px',
         }}
       >
         <Typography variant="h6" component="h2">
@@ -381,7 +382,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
 
       <Divider sx={{ mb: 2 }} />
 
-      <Stack spacing={2}>
+      <Stack spacing={2} sx={{ padding: '16px' }}>
         <FormControl size="small">
           <InputLabel id="language-select-label">
             {t('selectLanguage')}
@@ -528,7 +529,6 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         narrative={currentNarrative || (selectedMessage?.content ?? null)}
       />
       </Box> 
-      <StudentDashboard />
     </Box>
   );
 };
