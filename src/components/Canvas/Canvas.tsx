@@ -75,7 +75,9 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState('');
+  
   // Fetch questions from the API
   const fetchQuestions = useCallback(async () => {
     if (questions.length > 0) return; // Return if questions are already loaded
@@ -139,6 +141,20 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   
   // Helper function to handle adding new content
   const handleNewContent = useCallback((content: { title: string, url: string; type: 'video' | 'iframe' | 'slide' | 'image' | 'question'}) => {
+    
+    // Check if a tab with the same URL and type already exists
+    const existingTab = tabs.find(tab => 
+        tab.url === content.url && 
+        tab.type === content.type
+    );
+
+    // If tab already exists, just activate it
+    if (existingTab) {
+        const existingTabIndex = tabs.findIndex(tab => tab.id === existingTab.id);
+        setActiveTab(existingTabIndex);
+        return;
+    }
+    
     let newTab: CanvasTab;
 
     if (content.type === 'video' && isYouTubeUrl(content.url)) {

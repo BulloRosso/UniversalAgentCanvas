@@ -67,7 +67,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   const [audioCompleteCallback, setAudioCompleteCallback] = useState<(() => void) | null>(null);
   const { setPreferredLanguage } = useStudent();
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
-
+  const [currentStepTime, setCurrentStepTime] = useState(0);
   
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
     isPlaying: false,
