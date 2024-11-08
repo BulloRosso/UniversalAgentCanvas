@@ -61,13 +61,14 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   const [selectedLesson, setSelectedLesson] = useState<string>('');
   const { t, i18n } = useTranslation();
   const { lecture, loading, error } = useLecture();
-  const [currentStepTime, setCurrentStepTime] = useState(0);
-  const [totalLessonTime, setTotalLessonTime] = useState(0);
   const [stepDuration, setStepDuration] = useState(0);
   const [showDebugControls, setShowDebugControls] = useState(false);
   const [currentNarrative, setCurrentNarrative] = useState<string | null>(null);
   const [audioCompleteCallback, setAudioCompleteCallback] = useState<(() => void) | null>(null);
+  const { setPreferredLanguage } = useStudent();
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
 
+  
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
     isPlaying: false,
     currentStepIndex: -1,
@@ -146,8 +147,14 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
     }
   };
 
-  const handleLanguageChange = (event: SelectChangeEvent<string>) => {
-    i18n.changeLanguage(event.target.value);
+  const handleLanguageChange = async (event: SelectChangeEvent<string>) => {
+    const newLanguage = event.target.value;
+    setLanguageMenuOpen(false); // Close dropdown immediately
+    // Use setTimeout to change language after the dropdown closes
+    setTimeout(() => {
+      i18n.changeLanguage(newLanguage);
+      setPreferredLanguage(newLanguage);
+    }, 0);
   };
 
   const handleLessonChange = (event: SelectChangeEvent<string>) => {
@@ -384,11 +391,14 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
             value={i18n.language}
             label={t('selectLanguage')}
             onChange={handleLanguageChange}
+            open={languageMenuOpen}
+            onOpen={() => setLanguageMenuOpen(true)}
+            onClose={() => setLanguageMenuOpen(false)}
             sx={{ minWidth: 200 }}
           >
-            <MenuItem value="hy">{t('armenian')}</MenuItem>
-            <MenuItem value="en">{t('english')}</MenuItem>
-            <MenuItem value="de">{t('german')}</MenuItem>
+            <MenuItem value="hy">Հայերեն</MenuItem>
+            <MenuItem value="en">english</MenuItem>
+            <MenuItem value="de">deutsch</MenuItem>
           </Select>
         </FormControl>
 

@@ -1,15 +1,39 @@
 // src/events/CustomEvents.ts
+interface Question {
+  id: string;
+  question: string;
+  type: 'single-choice' | 'multiple-choice' | 'drag-and-drop';
+  choices: Choice[];
+  answerId: number[];
+  points: number;
+  placeholders?: string[];
+}
+
+interface Choice {
+  id: number;
+  text: string;
+}
+
 export type UIEventType = {
   cmd: string;
   title: string;
   url: string;
   narrative?: string;
   tool_call_id: string;
-  type?: 'video' | 'iframe' | 'slide' | 'image';
+  type?: 'video' | 'iframe' | 'slide' | 'image' | 'question';
+  question?: Question; // Add this for ui_askQuestion command
+  questionId?: string; // Add this as an alternative to question object
+};
+
+export type AnswerEventType = {
+  questionId: string;
+  points: number;
+  responseText: string;
 };
 
 export const EVENTS = {
-  UI_COMMAND: 'ui-command'
+  UI_COMMAND: 'ui-command',
+  ANSWER_EVENT: 'answer-event'
 } as const;
 
 export class EventBus {

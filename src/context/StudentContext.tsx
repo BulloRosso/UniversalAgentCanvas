@@ -12,6 +12,7 @@ interface StudentState {
   activeLecture: string;
   activeLesson: string;
   answeredQuestions: AnsweredQuestion[];
+  preferredLanguage: string;
 }
 
 interface StudentContextType extends StudentState {
@@ -21,6 +22,7 @@ interface StudentContextType extends StudentState {
   setActiveLesson: (lesson: string) => void;
   addAnsweredQuestion: (question: AnsweredQuestion) => void;
   getStatusDescription: () => string;
+  setPreferredLanguage: (language: string) => void;
 }
 
 // Utility function to format current date and time
@@ -61,6 +63,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     activeLecture: '',
     activeLesson: '',
     answeredQuestions: [],
+    preferredLanguage: 'en',
   });
 
   const setName = (name: string) => {
@@ -79,6 +82,10 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setState(prev => ({ ...prev, activeLesson }));
   };
 
+  const setPreferredLanguage = (language: string) => {
+    setState(prev => ({ ...prev, preferredLanguage: language }));
+  };
+  
   const addAnsweredQuestion = (question: AnsweredQuestion) => {
     setState(prev => {
       // Check if question already exists
@@ -94,10 +101,13 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const getStatusDescription = (): string => {
+    
     const basicInfo = `The current student's name is ${state.name}. The student is located in [${state.location}]. ${getCurrentDateTime()}.\n`;
 
     const lectureInfo = `The active lecture is "${state.activeLecture}" and the active lesson is "${state.activeLesson}".\n`;
 
+    const languageInfo = `Please respond in ${state.preferredLanguage} language.\n`;
+    
     let questionsInfo = 'The user has answered the following questions:\n';
     if (state.answeredQuestions.length === 0) {
       questionsInfo += '* No questions answered yet\n';
@@ -138,9 +148,9 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 -------------------
     `;
 
-    console.debug(`${basicInfo}\n${lectureInfo}\n${questionsInfo}`)
+    console.debug(`${basicInfo}\n${languageInfo}\n${lectureInfo}\n${questionsInfo}\n`)
     
-    return `${basicInfo}\n${lectureInfo}\n${questionsInfo}\n${questionList}`;
+    return `${basicInfo}\n${languageInfo}\n${lectureInfo}\n${questionsInfo}\n$`;
   };
 
   return (

@@ -23,6 +23,7 @@ const initI18n = async () => {
             "selectLanguage": "Ընտրեք լեզուն",
 
             // Canvas
+            "question": "Հարց",
             "content": "Բովանդակություն",
             "youtubePlayer": "YouTube նվագարկիչ",
             "videoPlayer": "Տեսանյութի նվագարկիչ",
@@ -63,7 +64,8 @@ const initI18n = async () => {
             "youtubeUrlDetected": "✓ YouTube URL detected",
             "pasteYoutubeUrl": "For YouTube videos, paste a YouTube video URL",
             "selectLanguage": "Select Language",
-
+            "question": "Question",
+            
             // Canvas
             "content": "Welcome",
             "youtubePlayer": "YouTube Player",
@@ -109,6 +111,7 @@ const initI18n = async () => {
             "selectLanguage": "Sprache auswählen",
 
             // Canvas
+            "question": "Frage",
             "content": "Willkommen",
             "youtubePlayer": "YouTube-Player",
             "videoPlayer": "Video-Player",

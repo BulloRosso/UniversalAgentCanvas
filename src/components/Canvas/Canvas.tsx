@@ -16,7 +16,7 @@ import { isYouTubeUrl, extractYouTubeId } from '../../utils/youtube';
 import profImage from '../../assets/robo-prof.png';
 import { SlideTransition } from '../../components/SlideTransition';
 import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
-import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
+import { EventBus, EVENTS, UIEventType, AnswerEventType } from '../../events/CustomEvents';
 import TestQuestion from './TestQuestion';
 import axios from 'axios';
 
@@ -34,6 +34,7 @@ interface CanvasTab {
   loading: boolean;
   youtubeId?: string;
   error?: string;
+  questionData?: any;
 }
 
 // Add interfaces for the question data structure
@@ -74,11 +75,6 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [questionsError, setQuestionsError] = useState<string | null>(null);
-  
-  // Reference to the canvas container
-  const rootRef = useRef<HTMLDivElement>(null);
 
   // Fetch questions from the API
   const fetchQuestions = useCallback(async () => {
@@ -89,8 +85,6 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
 
     try {
       const response = await axios.get<QuestionsData>(QUESTIONS_API_URL);
-      console.log("--- url " + QUESTIONS_API_URL + " returns ---")
-      console.log(response.data.questions)
       setQuestions(response.data.questions);
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -120,7 +114,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
 
     const newTab: CanvasTab = {
       id: `question-${Date.now()}`,
-      title: `Question ${questionId}`,
+      title: `${t('question')} ${question.id}`,
       type: 'question',
       url: questionId,
       loading: false,
@@ -237,22 +231,29 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     const unsubscribe = EventBus.getInstance().subscribe(
       EVENTS.UI_COMMAND,
       (event: CustomEvent<UIEventType>) => {
-        const { cmd, title, url, type } = event.detail;
+        const { cmd, title, url, type, questionId } = event.detail;
         console.log('Received UI command:', event.detail);
-
+        
         // Only handle ui_showSlide commands
         if (cmd === 'ui_showSlide' && url) {
           // Map the command to a content type
           handleNewContent({ title, url, type: "image" });
         } else if (cmd === 'ui_askQuestion') {
-          handleQuestionCommand(event.detail.questionId);
+          // Handle both question object and questionId
+          
+          const qId = questionId
+          if (qId) {
+            handleQuestionCommand(qId);
+          } else {
+            console.error('No question ID provided in ui_askQuestion command');
+          }
         }
       }
     );
 
     // Cleanup subscription
     return () => unsubscribe();
-  }, [questions]);
+  }, [handleNewContent, handleQuestionCommand]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -365,21 +366,6 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
         title="YouTube video player"
       />
     );
-  };
-
-  const question = {
-    id: "Q1",
-    question: "What is the color of the rainbow?",
-    type: "multiple-choice",
-    choices: [
-      { id: 1, text: "green" },
-      { id: 2, text: "red" },
-      { id: 3, text: "purple" },
-      { id: 4, text: "blue" },
-      { id: 5, text: "colorful" }
-    ],
-    answerId: [4,2],
-    points: 4
   };
   
   return (

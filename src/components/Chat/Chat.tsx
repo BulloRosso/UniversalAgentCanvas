@@ -8,7 +8,7 @@ import { ChatConfig } from '../../types/config';
 import { ChatMessage } from '../../types/message';
 import { WebSocketProvider, useWebSocket } from '../../context/WebSocketContext';
 import { useTranslation } from 'react-i18next';
-import { EventBus, EVENTS } from '../../events/CustomEvents';
+import { EventBus, EVENTS, AnswerEventType } from '../../events/CustomEvents';
 import { useStudent } from '../../context/StudentContext';
 
 interface ChatProps {
@@ -42,7 +42,7 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
 
   // New effect for handling answer events
   useEffect(() => {
-    const handleAnswerEvent = (event: CustomEvent<AnswerEvent>) => {
+    const handleAnswerEvent = (event: CustomEvent<AnswerEventType>) => {
       const { responseText } = event.detail;
 
       // Create a new message for the answer response
@@ -61,14 +61,16 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
       EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
         cmd: 'ui_narrative',
         narrative: responseText.replace(/[#*]/g, ''), // Remove markdown symbols for narration
-        tool_call_id: `narrative-${Date.now()}`
+        tool_call_id: `narrative-${Date.now()}`,
+        title: '', // Add empty string for required title
+        url: ''    // Add empty string for required url
       });
     };
 
     // Subscribe to answer events
     const unsubscribe = EventBus.getInstance().subscribe(
-      'answer-event',
-      (event: CustomEvent) => handleAnswerEvent(event)
+       EVENTS.ANSWER_EVENT,
+      (event: CustomEvent) => handleAnswerEvent(event as CustomEvent<AnswerEventType>)
     );
 
     // Cleanup subscription
