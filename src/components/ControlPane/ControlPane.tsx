@@ -293,6 +293,9 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
               };
           } else {
               console.log('[ControlPane] Lesson complete, stopping playback');
+
+              // Emit state on event bus, so the interactive part can be started by LLM now
+              EventBus.getInstance().publish(EVENTS.LECTURE_PART_FINISHED,  currentPlaybackState.currentLesson);
             
               return {
                   isPlaying: false,

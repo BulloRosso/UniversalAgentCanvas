@@ -33,7 +33,8 @@ export type AnswerEventType = {
 
 export const EVENTS = {
   UI_COMMAND: 'ui-command',
-  ANSWER_EVENT: 'answer-event'
+  ANSWER_EVENT: 'answer-event',
+  LECTURE_PART_FINISHED: 'lecture-part-finished',
 } as const;
 
 export class EventBus {

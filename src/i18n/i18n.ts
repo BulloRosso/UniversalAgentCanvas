@@ -41,6 +41,10 @@ const initI18n = async () => {
             "english": "English",
             "german": "Deutsch",
 
+            "hy": "Armenian",
+            "en": "English",  
+            "de": "German",
+
             // Input pane
             "chat.input.placeholder": "Խնդրում եմ մուտքագրել հարց",
 
@@ -87,6 +91,10 @@ const initI18n = async () => {
             "english": "English",
             "german": "German",
 
+            "hy": "Armenian",
+              "en": "English",  
+              "de": "German",
+
             // Chat messages
             "welcomeMessage": "Willkommen! Ich bin Ihr KI-Assistent. Sie können eine beliebige YouTube-URL oder Webseiten-URL einfügen, und ich werde sie für Sie anzeigen. Brauchen Sie Hilfe? Fragen Sie einfach!",
 
@@ -132,6 +140,10 @@ const initI18n = async () => {
             "english": "Englisch",
             "german": "Deutsch",
 
+            "hy": "Armenian",
+              "en": "English",  
+              "de": "German",
+
             // Chat messages
             "welcomeMessage": "Welcome! I am your AI assistant. You can paste any YouTube URL or webpage URL, and I will display it for you. Need help? Just ask!",
 
@@ -141,8 +153,8 @@ const initI18n = async () => {
           }
         }
       },
-      lng: 'hy', // default language
-      fallbackLng: 'hy',
+      lng: 'en', // default language
+      fallbackLng: 'en',
       interpolation: {
         escapeValue: false
       },

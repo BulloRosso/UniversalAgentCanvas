@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Define types for our state
 interface AnsweredQuestion {
@@ -11,6 +12,7 @@ interface StudentState {
   location: string;
   activeLecture: string;
   activeLesson: string;
+  updatedContext: string[];
   answeredQuestions: AnsweredQuestion[];
   preferredLanguage: string;
 }
@@ -21,8 +23,11 @@ interface StudentContextType extends StudentState {
   setActiveLecture: (lecture: string) => void;
   setActiveLesson: (lesson: string) => void;
   addAnsweredQuestion: (question: AnsweredQuestion) => void;
+  getUpdatedContext: () => string[];
   getStatusDescription: () => string;
   setPreferredLanguage: (language: string) => void;
+  addToUpdatedContext: (context: string) => void;
+  clearUpdatedContext: () => void;
 }
 
 // Utility function to format current date and time
@@ -37,7 +42,8 @@ const getCurrentDateTime = (): string => {
   const month = months[now.getMonth()];
   const hours = now.getHours().toString().padStart(2, '0');
   const minutes = now.getMinutes().toString().padStart(2, '0');
-
+ 
+  
   // Add appropriate suffix to day number
   const getDaySuffix = (day: number): string => {
     if (day > 3 && day < 21) return 'th';
@@ -57,11 +63,14 @@ const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 // Create provider component
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  
+  const { t } = useTranslation();
   const [state, setState] = useState<StudentState>({
-    name: '',
-    location: '',
+    name: 'Ralph',
+    location: 'Yerevan',
     activeLecture: '',
     activeLesson: '',
+    updatedContext: [],
     answeredQuestions: [],
     preferredLanguage: 'en',
   });
@@ -69,6 +78,16 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const setName = (name: string) => {
     setState(prev => ({ ...prev, name }));
   };
+
+  const addToUpdatedContext = (context: string) => {
+    setState(prev => {
+      // Add new information to the context
+      return {
+        ...prev,
+        updatedContext: [...prev.updatedContext, context],
+      };
+    });
+  }
 
   const setLocation = (location: string) => {
     setState(prev => ({ ...prev, location }));
@@ -100,13 +119,21 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
+  const getUpdatedContext = () => {
+    return state.updatedContext;
+  }
+
+  const clearUpdatedContext = () => {
+    setState(prev => ({ ...prev, updatedContext: [] }));
+  }  
+  
   const getStatusDescription = (): string => {
     
     const basicInfo = `The current student's name is ${state.name}. The student is located in [${state.location}]. ${getCurrentDateTime()}.\n`;
 
     const lectureInfo = `The active lecture is "${state.activeLecture}" and the active lesson is "${state.activeLesson}".\n`;
 
-    const languageInfo = `Please respond in ${state.preferredLanguage} language.\n`;
+    const languageInfo = `Please respond in ${t(state.preferredLanguage)} language.\n`;
     
     let questionsInfo = 'The user has answered the following questions:\n';
     if (state.answeredQuestions.length === 0) {
@@ -150,7 +177,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     console.debug(`${basicInfo}\n${languageInfo}\n${lectureInfo}\n${questionsInfo}\n`)
     
-    return `${basicInfo}\n${languageInfo}\n${lectureInfo}\n${questionsInfo}\n$`;
+    return `${basicInfo}\n${languageInfo}\n${lectureInfo}\n${questionsInfo}\n${questionList}$`;
   };
 
   return (
@@ -161,7 +188,11 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLocation,
         setActiveLecture,
         setActiveLesson,
+        setPreferredLanguage,
         addAnsweredQuestion,
+        addToUpdatedContext,
+        getUpdatedContext,
+        clearUpdatedContext,
         getStatusDescription,
       }}
     >

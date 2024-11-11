@@ -156,6 +156,15 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
           const statusDescription = student.getStatusDescription();
           apiContent = `${statusDescription}\n\nUser Message: ${content}`;
           setIsFirstMessage(false); // Update the flag after first message
+        } else {
+          if (student.getUpdatedContext().length > 0) {
+             // update the LLMs knowledge about what happened in the UI
+             student.getUpdatedContext().forEach((context) => {
+               apiContent = `${apiContent}\n\n${context}`;
+             });
+             student.clearUpdatedContext();
+             console.log("Updated LLM's knowledge with ", apiContent)
+          }
         }
         
         await sendMessage(apiContent, attachments);

@@ -30,7 +30,7 @@ export const ChatOutputPane: React.FC<ChatOutputPaneProps> = ({
     // Use requestAnimationFrame to ensure DOM updates are complete
     requestAnimationFrame(() => {
       if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+        messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
       }
     });
   };

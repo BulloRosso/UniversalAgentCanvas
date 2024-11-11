@@ -15,10 +15,11 @@ import { useTranslation } from 'react-i18next';
 import { isYouTubeUrl, extractYouTubeId } from '../../utils/youtube';
 import profImage from '../../assets/robo-prof.png';
 import { SlideTransition } from '../../components/SlideTransition';
-import { SlideContent } from '../SlideContent/SlideContent';  // Add this import
+import { SlideContent } from '../SlideContent/SlideContent';  
 import { EventBus, EVENTS, UIEventType, AnswerEventType } from '../../events/CustomEvents';
 import TestQuestion from './TestQuestion';
 import axios from 'axios';
+import { useStudent } from '../../context/StudentContext';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,7 +68,7 @@ const MAX_TABS = 8;
 const QUESTIONS_API_URL = import.meta.env.VITE_API_URL + 'api/questions/L1'; // TODO lesson hardcoded
 
 export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete }) => {
-  const { t } = useTranslation();
+  const { t, i18n  } = useTranslation();
   const [tabs, setTabs] = useState<CanvasTab[]>([
     { id: 'content', title: t('content'), type: 'iframe', url: '', loading: false }
   ]);
@@ -77,6 +78,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState('');
+  const student = useStudent(); 
   
   // Fetch questions from the API
   const fetchQuestions = useCallback(async () => {
@@ -84,9 +86,10 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
 
     setQuestionsLoading(true);
     setQuestionsError(null);
-
+    const lang = student.preferredLanguage;
+    
     try {
-      const response = await axios.get<QuestionsData>(QUESTIONS_API_URL);
+      const response = await axios.get<QuestionsData>(QUESTIONS_API_URL+ '?lang=' + lang);
       setQuestions(response.data.questions);
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -122,6 +125,9 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
       loading: false,
       questionData: question
     };
+
+    // update context, so the LLM knows the answer
+    student.addToUpdatedContext("This question was asked: " + JSON.stringify(question));
 
     setIsTransitioning(true);
     setTimeout(() => {

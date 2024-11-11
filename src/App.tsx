@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Box, ThemeProvider, createTheme } from '@mui/material';
 import { Canvas } from './components/Canvas/Canvas';
 import { Chat } from './components/Chat/Chat';
@@ -10,8 +10,10 @@ import i18n from './i18n/i18n';
 import { LectureProvider } from './context/LectureContext';
 import { StudentProvider } from './context/StudentContext';
 import { ChatMessage } from './types/message';
+import { Lesson } from './types/lecture';
 import profImage from './assets/robo-prof.png';
 import defaultUserIcon from './assets/user-icon.png'; // You'll need to add this image
+import { EventBus, EVENTS, UIEventType } from './events/CustomEvents';
 
 const theme = createTheme({
   typography: {
@@ -62,6 +64,21 @@ export const App: React.FC = () => {
     }
   }, [currentStepHandler]);
 
+  useEffect(() => {
+    // Subscribe to UI commands
+    const unsubscribe = EventBus.getInstance().subscribe(
+      EVENTS.LECTURE_PART_FINISHED,
+      (event: CustomEvent<UIEventType>) => {
+        const lecture = event.detail as unknown as Lesson;
+        console.log('Starting interactive part of the lecture:', lecture.discussion.prompt);
+
+        // TODO inital prompt to set the stage - should emit chat inviting student(s) to participate
+      }
+    );
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
  
   const handleChatMessage = useCallback((content: string, isUser: boolean = false) => {
     const newMessage: ChatMessage = {
