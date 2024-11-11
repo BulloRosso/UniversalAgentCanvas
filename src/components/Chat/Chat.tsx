@@ -106,16 +106,17 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
             : msg
         );
 
+        onMessageUpdate(updatedMessages);
+        typingMessageIdRef.current = null;
+        
         // Trigger audio narration for the new message
         EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
           cmd: 'ui_narrative',
           narrative: cleanMessageContent(wsMessage.message),
-          tool_call_id: `narrative-${Date.now()}`
+          tool_call_id: `narrative-${Date.now()}`,
+          skipMessageCreation: true 
         });
-        
-        console.log('Updating messages with response:', updatedMessages);
-        typingMessageIdRef.current = null;
-        onMessageUpdate(updatedMessages);
+       
       }
     } else {
       console.log('Received UI COMMAND', JSON.stringify(wsMessage));

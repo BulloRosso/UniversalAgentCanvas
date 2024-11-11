@@ -5,6 +5,7 @@ export interface ChatMessage {
   timestamp: Date;
   isUser: boolean;
   isTyping?: boolean;
+  skipMessageCreation?: boolean;
   attachments?: Array<{
     type: string;
     url: string;

@@ -94,9 +94,11 @@ export type NarrativeReadyEvent = {
 export class EventBus {
   private static instance: EventBus;
   private eventTarget: EventTarget;
+  private lastEvents: Map<string, CustomEvent>;
 
   private constructor() {
     this.eventTarget = new EventTarget();
+    this.lastEvents = new Map();
   }
 
   public static getInstance(): EventBus {
@@ -107,8 +109,10 @@ export class EventBus {
   }
 
   public publish(eventName: string, data: any): void {
-    console.debug("Published: " + eventName, data)
+    console.debug("Published: " + eventName, data);
     const event = new CustomEvent(eventName, { detail: data });
+    // Store the last event
+    this.lastEvents.set(eventName, event);
     this.eventTarget.dispatchEvent(event);
   }
 
@@ -116,6 +120,19 @@ export class EventBus {
     const handler = (e: Event) => callback(e as CustomEvent);
     this.eventTarget.addEventListener(eventName, handler);
     return () => this.eventTarget.removeEventListener(eventName, handler);
+  }
+
+  public getLastEvent(eventName: string): CustomEvent | undefined {
+    return this.lastEvents.get(eventName);
+  }
+
+  // Optional: Add method to clear last events if needed
+  public clearLastEvent(eventName: string): void {
+    this.lastEvents.delete(eventName);
+  }
+
+  public clearAllLastEvents(): void {
+    this.lastEvents.clear();
   }
 }
 

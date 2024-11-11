@@ -332,6 +332,14 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
 
     return <div>{status}</div>;
   }
+
+  const handleAudioPlaybackStart = () => {
+    const uiEvent = EventBus.getInstance().getLastEvent(EVENTS.UI_COMMAND);
+    // Only create message if it's not from a WebSocket response
+    if (!uiEvent?.detail?.skipMessageCreation) {
+      onChatMessage(createChatMessage(currentNarrative, false));
+    }
+  };
   
   const handleToggleMute = () => {
     setPlaybackState(prev => ({
@@ -534,12 +542,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
             handleStepComplete();
           }
         }}
-        onPlaybackStart={() => {
-          console.log('[ControlPane] AudioPlayer started playback');
-          if (!selectedMessage) {
-            onChatMessage(createChatMessage(currentNarrative, false));
-          }
-        }}
+        onPlaybackStart={handleAudioPlaybackStart}
       />
       </Box> 
     </Box>
