@@ -1,5 +1,5 @@
 // src/components/ControlPane/ControlPane.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -34,7 +34,7 @@ import { ChatMessage } from '../../types/message';
 import { lecturePlayerService } from '../../services/lecturePlayerService';
 import AudioPlayer, { AudioPlayerProps } from '../AudioPlayer/AudioPlayer';  
 import QRCode from '..//QRCode/QRCode';
-import { EventBus, EVENTS, UIEventType } from '../../events/CustomEvents';
+import { EventBus, EVENTS, UIEventType, AudioPlaybackState } from '../../events/CustomEvents';
 import { useStudent } from '../../context/StudentContext';
 
 interface ControlPaneProps {
@@ -68,6 +68,10 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   const { setPreferredLanguage } = useStudent();
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [currentStepTime, setCurrentStepTime] = useState(0);
+  const eventBus = EventBus.getInstance();
+  // Add a ref to track if we've already finished this lesson
+  const lessonCompletionRef = useRef<string | null>(null);
+  const completionInProgressRef = useRef(false);
   
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
     isPlaying: false,
@@ -85,6 +89,33 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       isTyping: false
     };
   };
+
+  useEffect(() => {
+    // Listen for natural audio completion
+    const unsubscribeComplete = eventBus.subscribe(
+      EVENTS.PLAYBACK_STATE_CHANGE,
+      (event: CustomEvent<PlaybackStateChangeEvent>) => {
+        if (event.detail.state === AudioPlaybackState.COMPLETED) {
+          console.log('[ControlPane] Audio completed naturally, triggering step completion');
+          handleStepComplete();
+        }
+      }
+    );
+
+    // Listen for audio errors
+    const unsubscribeError = eventBus.subscribe(
+      EVENTS.AUDIO_PLAYBACK_ERROR,
+      () => {
+        console.log('[ControlPane] Audio error detected, moving to next step');
+        handleStepComplete();
+      }
+    );
+
+    return () => {
+      unsubscribeComplete();
+      unsubscribeError();
+    };
+  }, []);
   
   // Listen for narrative commands from EventBus
   useEffect(() => {
@@ -112,34 +143,6 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
     return () => unsubscribe();
   }, [selectedMessage, currentNarrative]);
 
-  useEffect(() => {
-    let timerId: number;
-
-    if (playbackState.isPlaying) {
-      timerId = window.setInterval(() => {
-        setCurrentStepTime(prev => {
-          if (prev >= stepDuration) {
-            clearInterval(timerId);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerId) {
-        clearInterval(timerId);
-      }
-    };
-  }, [playbackState.isPlaying, stepDuration]);
-
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
   const handleDisplay = (type: 'video' | 'iframe') => {
     if (url.trim()) {
       onDisplayContent(url.trim(), type, undefined);
@@ -162,81 +165,131 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   };
 
   const playStep = async (step: Step) => {
-      console.log('[ControlPane] Playing step:', {
-          stepNumber: step.stepNumber,
-          title: step.title,
-          type: step.type
+    console.log('[ControlPane] Attempting to play step:', {
+      stepNumber: step.stepNumber,
+      type: step.type
+    });
+
+    // Guard against playing same step multiple times
+    if (playbackState.isPlaying && 
+        playbackState.currentStepIndex === step.stepNumber - 1) {
+      console.log('[ControlPane] Step already playing, skipping');
+      return;
+    }
+
+    try {
+      // Update playback state first
+      setPlaybackState(prevState => ({
+        ...prevState,
+        isPlaying: true,
+        currentStepIndex: step.stepNumber - 1
+      }));
+
+      // Announce step transition
+      eventBus.publish(EVENTS.STEP_TRANSITION, {
+        from: playbackState.currentStepIndex,
+        to: step.stepNumber - 1,
+        lessonId: playbackState.currentLesson?.lessonId || ''
       });
 
-      try {
+      // Display content
+      onDisplayContent(
+        step.url, 
+        step.type,
+        step.type === 'video' ? () => {
+          console.log('[ControlPane] Video content completed, triggering step completion');
+          handleStepComplete();
+        } : undefined
+      );
 
-          // Add a guard to prevent multiple executions
-          if (playbackState.isPlaying && playbackState.currentStepIndex === step.stepNumber - 1) {
-            console.log('[ControlPane] Step already playing, skipping');
-            return;
-          }
-        
-        
-           // 1. Display content in canvas first
-           onDisplayContent(
-             step.url, 
-             step.type,
-             step.type === 'video' ? () => handleStepComplete() : undefined
-           );
+      // For non-video content, set up narrative
+      if (step.type !== 'video') {
+        console.log('[ControlPane] Setting narrative for step:', step.stepNumber);
+        setCurrentNarrative(step.narrative);
+      }
 
-           // 2. Add narrative to chat
-           onChatMessage(createChatMessage(step.narrative, false));
-
-           // 3. Update timers
-           setStepDuration(step.duration);
-
-           // 4. For non-video content, play audio narration
-            if (step.type !== 'video') {
-                try {
-                    setCurrentNarrative(step.narrative);
-
-                    // Wait for audio completion
-                    await new Promise<void>((resolve) => {
-                        const onAudioComplete = () => {
-                            console.log('[ControlPane] Audio narration complete');
-                            setCurrentNarrative(null);
-                            setTimeout(() => {
-                                resolve();
-                                handleStepComplete();
-                            }, 1000);  // Reduced delay for better UX
-                        };
-                        setAudioCompleteCallback(() => onAudioComplete);
-                    });
-                } catch (error) {
-                    console.error('[ControlPane] Error playing narrative:', error);
-                    setCurrentNarrative(null);
-                    handleStepComplete();  // Still move to next step even if there's an error
-                }
-            }
-        } catch (error) {
-            console.error('[ControlPane] Error playing step:', error);
-            handleStepComplete();  // Ensure we still move forward even if there's an error
-        }
+    } catch (error) {
+      console.error('[ControlPane] Error playing step:', error);
+      handleStepComplete();
+    }
   };
 
+  const handleStepComplete = () => {
+    // Guard against multiple simultaneous completions
+    if (completionInProgressRef.current) {
+      console.log('[ControlPane] Completion already in progress, skipping');
+      return;
+    }
+
+    console.log('[ControlPane] Step complete called');
+    completionInProgressRef.current = true;
+
+    setPlaybackState(currentPlaybackState => {
+      if (!currentPlaybackState.currentLesson) {
+        console.log('[ControlPane] No current lesson found, stopping');
+        completionInProgressRef.current = false;
+        return currentPlaybackState;
+      }
+
+      const nextIndex = currentPlaybackState.currentStepIndex + 1;
+      console.log('[ControlPane] Calculating next step:', {
+        currentIndex: currentPlaybackState.currentStepIndex,
+        nextIndex,
+        totalSteps: currentPlaybackState.currentLesson.presentation.length
+      });
+
+      if (nextIndex < currentPlaybackState.currentLesson.presentation.length) {
+        console.log('[ControlPane] Starting next step');
+        const nextStep = currentPlaybackState.currentLesson.presentation[nextIndex];
+
+        // Use setTimeout to ensure state updates have propagated
+        setTimeout(() => {
+          completionInProgressRef.current = false;
+          playStep(nextStep);
+        }, 100);
+
+        return {
+          ...currentPlaybackState,
+          currentStepIndex: nextIndex,
+          isPlaying: true
+        };
+      } else {
+        console.log('[ControlPane] Lesson complete, checking if already finished');
+
+        // Move this before the state update
+        console.log('[ControlPane] Publishing LECTURE_PART_FINISHED event');
+        eventBus.publish(
+          EVENTS.LECTURE_PART_FINISHED, 
+          currentPlaybackState.currentLesson
+        );
+
+        completionInProgressRef.current = false;
+        return {
+          isPlaying: false,
+          currentStepIndex: -1,
+          isMuted: false,
+          currentLesson: null
+        };
+      }
+    });
+  };
+
+  // Reset lesson completion ref when a new lesson starts
   const handlePlayLesson = async () => {
     if (!selectedLesson || !lecture) return;
     if (selectedLesson && lecture) {
+      // Reset completion tracking for new lesson
+      lessonCompletionRef.current = null;
 
-      // Add a guard to prevent multiple starts
       if (playbackState.isPlaying) {
         console.log('[ControlPane] Lesson already playing, skipping start');
         return;
       }
-      
+
       const lesson = lecture.lessons.find(l => l.lessonId === selectedLesson);
       if (!lesson || lesson.presentation.length === 0) return;
 
-      
-      const totalTime = lesson.presentation.reduce((sum, step) => sum + step.duration, 0);
-     
       setStepDuration(lesson.presentation[0].duration);
-
 
       setPlaybackState({
         isPlaying: true,
@@ -245,14 +298,12 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         currentLesson: lesson
       });
 
-      // Add a small delay before starting the first step
       await new Promise(resolve => setTimeout(resolve, 100));
 
       try {
         await playStep(lesson.presentation[0]);
       } catch (error) {
         console.error('[ControlPane] Error starting lesson:', error);
-        // Reset state on error
         setPlaybackState({
           isPlaying: false,
           currentStepIndex: -1,
@@ -260,52 +311,9 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
           currentLesson: null
         });
       }
-      
     }
   };
 
-  const handleStepComplete = () => {
-      console.log('[ControlPane] Step complete called');
-
-      setPlaybackState(currentPlaybackState => {
-          if (!currentPlaybackState.currentLesson) {
-              console.log('[ControlPane] No current lesson found, stopping');
-              return currentPlaybackState;
-          }
-
-          const nextIndex = currentPlaybackState.currentStepIndex + 1;
-          console.log('[ControlPane] Current state:', {
-              currentIndex: currentPlaybackState.currentStepIndex,
-              nextIndex,
-              totalSteps: currentPlaybackState.currentLesson.presentation.length
-          });
-
-          if (nextIndex < currentPlaybackState.currentLesson.presentation.length) {
-              console.log('[ControlPane] Starting next step');
-              const nextStep = currentPlaybackState.currentLesson.presentation[nextIndex];
-
-              // Schedule next step immediately
-              playStep(nextStep);
-
-              return {
-                  ...currentPlaybackState,
-                  currentStepIndex: nextIndex
-              };
-          } else {
-              console.log('[ControlPane] Lesson complete, stopping playback');
-
-              // Emit state on event bus, so the interactive part can be started by LLM now
-              EventBus.getInstance().publish(EVENTS.LECTURE_PART_FINISHED,  currentPlaybackState.currentLesson);
-            
-              return {
-                  isPlaying: false,
-                  currentStepIndex: -1,
-                  isMuted: false,
-                  currentLesson: null
-              };
-          }
-      });
-  };
 
   const StudentDashboard = () => {
     const student = useStudent();
@@ -516,20 +524,22 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       )}
       <Box>
       <AudioPlayer 
+        narrative={currentNarrative || (selectedMessage?.content ?? null)}
         onComplete={() => {
+          console.log('[ControlPane] AudioPlayer completed callback');
           if (selectedMessage) {
             onResetSelectedMessage();
-          } else if (audioCompleteCallback) {
-            audioCompleteCallback();
-            setAudioCompleteCallback(null);
+          } else if (playbackState.currentLesson) {
+            // Only call handleStepComplete for ongoing lessons
+            handleStepComplete();
           }
         }}
         onPlaybackStart={() => {
-          if (!selectedMessage) {  // Only emit chat message during normal playback
+          console.log('[ControlPane] AudioPlayer started playback');
+          if (!selectedMessage) {
             onChatMessage(createChatMessage(currentNarrative, false));
           }
         }}
-        narrative={currentNarrative || (selectedMessage?.content ?? null)}
       />
       </Box> 
     </Box>

@@ -1,4 +1,35 @@
 // src/events/CustomEvents.ts
+export enum AudioPlaybackState {
+  IDLE = 'idle',
+  LOADING = 'loading',
+  PLAYING = 'playing',
+  PAUSED = 'paused',
+  ERROR = 'error',
+  COMPLETED = 'completed'
+}
+
+export enum StepPlaybackState {
+  IDLE = 'idle',
+  PREPARING = 'preparing',
+  IN_PROGRESS = 'in_progress',
+  TRANSITIONING = 'transitioning',
+  COMPLETED = 'completed',
+  ERROR = 'error'
+}
+
+export const EVENTS = {
+  UI_COMMAND: 'ui-command',
+  ANSWER_EVENT: 'answer-event',
+  LECTURE_PART_FINISHED: 'lecture-part-finished',
+  PLAYBACK_STATE_CHANGE: 'playback-state-change',
+  STEP_STATE_CHANGE: 'step-state-change',
+  NARRATIVE_REQUEST: 'narrative-request',
+  NARRATIVE_READY: 'narrative-ready',
+  STEP_TRANSITION: 'step-transition',
+  AUDIO_PLAYBACK_ERROR: 'audio-playback-error'
+} as const;
+
+
 interface Question {
   id: string;
   question: string;
@@ -31,11 +62,34 @@ export type AnswerEventType = {
   responseText: string;
 };
 
-export const EVENTS = {
-  UI_COMMAND: 'ui-command',
-  ANSWER_EVENT: 'answer-event',
-  LECTURE_PART_FINISHED: 'lecture-part-finished',
-} as const;
+export type PlaybackStateChangeEvent = {
+  state: AudioPlaybackState;
+  narrativeId: string;
+  timestamp: number;
+  error?: string;
+};
+
+export type StepStateChangeEvent = {
+  state: StepPlaybackState;
+  stepNumber: number;
+  lessonId: string;
+  timestamp: number;
+  error?: string;
+};
+
+export type NarrativeRequestEvent = {
+  narrativeId: string;
+  text: string;
+  priority: number;
+  timestamp: number;
+};
+
+export type NarrativeReadyEvent = {
+  narrativeId: string;
+  audioUrl: string;
+  duration: number;
+  timestamp: number;
+};
 
 export class EventBus {
   private static instance: EventBus;

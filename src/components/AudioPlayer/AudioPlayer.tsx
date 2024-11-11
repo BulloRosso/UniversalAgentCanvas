@@ -10,6 +10,8 @@ import {
   Pause, 
   RestartAlt 
 } from '@mui/icons-material';
+import { EventBus, EVENTS, AudioPlaybackState } from '../../events/CustomEvents';
+import { audioPlaybackService } from '../../services/audioPlaybackService';
 
 export interface AudioPlayerProps {
   narrative: string | null;
@@ -17,174 +19,83 @@ export interface AudioPlayerProps {
   onPlaybackStart?: () => void;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete, onPlaybackStart }) => {
+  const [playbackState, setPlaybackState] = useState<AudioPlaybackState>(AudioPlaybackState.IDLE);
   const [error, setError] = useState<string | null>(null);
-  const [hasAudio, setHasAudio] = useState(false);
   const audioRef = useRef(new Audio());
-  const currentNarrativeRef = useRef<string | null>(null);
-  const mediaSourceRef = useRef<MediaSource | null>(null);
-  const sourceBufferRef = useRef<SourceBuffer | null>(null);
+  const currentNarrativeId = useRef<string | null>(null);
+  const eventBus = EventBus.getInstance();
 
-  
-  // Safely cleanup MediaSource and SourceBuffer
-  const cleanupMediaSource = () => {
-    try {
-      if (sourceBufferRef.current && mediaSourceRef.current) {
-        // Only remove source buffer if MediaSource is still open
-        if (mediaSourceRef.current.readyState === 'open') {
-          // Only remove if the source buffer is actually attached to this MediaSource
-          const sourceBuffers = mediaSourceRef.current.sourceBuffers;
-          if (sourceBuffers.length > 0 && sourceBuffers[0] === sourceBufferRef.current) {
-            mediaSourceRef.current.removeSourceBuffer(sourceBufferRef.current);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('[AudioPlayer] MediaSource cleanup:', error);
-    } finally {
-      sourceBufferRef.current = null;
-      mediaSourceRef.current = null;
-    }
-  };
-  
   useEffect(() => {
-    if (!narrative || narrative === currentNarrativeRef.current) return;
+    if (!narrative || narrative === currentNarrativeId.current) {
+      return;
+    }
 
-    // Cleanup previous MediaSource before creating new one
-    cleanupMediaSource();
-    
-    currentNarrativeRef.current = narrative;
-    setIsLoading(true);
-    console.log('[AudioPlayer] Starting audio load for:', narrative);
+    const narrativeId = audioPlaybackService.requestNarrative(narrative);
+    currentNarrativeId.current = narrativeId;
 
-    // Create new MediaSource
-    const mediaSource = new MediaSource();
-    mediaSourceRef.current = mediaSource;
-    audioRef.current.src = URL.createObjectURL(mediaSource);
+    const unsubscribeReady = eventBus.subscribe(EVENTS.NARRATIVE_READY, (event: CustomEvent) => {
+      if (event.detail.narrativeId === narrativeId) {
+        setupAudioPlayback(event.detail.audioUrl);
+      }
+    });
 
-    mediaSource.addEventListener('sourceopen', async () => {
-      try {
-        // Create source buffer when MediaSource is ready
-        sourceBufferRef.current = mediaSource.addSourceBuffer('audio/mpeg');
-
-        const response = await fetch(import.meta.env.VITE_API_URL + 'api/narrative/tell/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'audio/mpeg',
-          },
-          body: JSON.stringify({ narrative })
-        });
-
-        if (!response.ok) throw new Error('Failed to fetch audio');
-        if (!response.body) throw new Error('No response body');
-
-        const reader = response.body.getReader();
-        const appendChunks = async () => {
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              // End of stream
-              if (mediaSourceRef.current?.readyState === 'open') {
-                mediaSourceRef.current.endOfStream();
-              }
-              break;
-            }
-
-            // Wait if the buffer is updating
-            if (sourceBufferRef.current?.updating) {
-              await new Promise(resolve => {
-                sourceBufferRef.current!.addEventListener('updateend', resolve, { once: true });
-              });
-            }
-
-            // Append the chunk if the source buffer still exists
-            if (sourceBufferRef.current) {
-              try {
-                sourceBufferRef.current.appendBuffer(value);
-              } catch (error) {
-                console.error('[AudioPlayer] Error appending buffer:', error);
-                throw error;
-              }
-            }
-          }
-        };
-
-        appendChunks().catch(error => {
-          console.error('[AudioPlayer] Streaming error:', error);
-          setError('Error streaming audio');
-          setIsLoading(false);
-        });
-
-        // Set up audio element event handlers
-        audioRef.current.oncanplay = () => {
-          console.log('[AudioPlayer] Audio can play, starting playback');
-          setIsLoading(false);
-          setHasAudio(true);
-          audioRef.current.play();
-          setIsPlaying(true);
-        };
-
-        audioRef.current.onended = () => {
-          console.log('[AudioPlayer] Playback completed');
-          setIsPlaying(false);
-          setHasAudio(false);
-          if (onComplete) {
-            onComplete();
-          }
-        };
-
-        audioRef.current.onerror = () => {
-          console.error('[AudioPlayer] Playback error');
-          setError('Error playing audio');
-          setIsPlaying(false);
-          setHasAudio(false);
-          setIsLoading(false);
-        };
-
-      } catch (error) {
-        console.error('[AudioPlayer] Setup error:', error);
-        setError('Failed to setup audio streaming');
-        setIsLoading(false);
+    const unsubscribeState = eventBus.subscribe(EVENTS.PLAYBACK_STATE_CHANGE, (event: CustomEvent) => {
+      if (event.detail.narrativeId === narrativeId) {
+        setPlaybackState(event.detail.state);
+        if (event.detail.error) {
+          setError(event.detail.error);
+        }
       }
     });
 
     return () => {
-      if (narrative) return;
-      
-      console.log('[AudioPlayer] Cleaning up');
-      if (audioRef.current) {
-        audioRef.current.pause();
-        if (audioRef.current.src) {
-          URL.revokeObjectURL(audioRef.current.src);
-        }
-        audioRef.current.src = '';
-        audioRef.current.oncanplay = null;
-        audioRef.current.onended = null;
-        audioRef.current.onerror = null;
-      }
-
-      cleanupMediaSource();
-
-      setIsPlaying(false);
-      setHasAudio(false);
-      setIsLoading(false);
-      setError(null);
+      unsubscribeReady();
+      unsubscribeState();
+      cleanup();
     };
-  }, [narrative, onComplete]);
+  }, [narrative]);
+
+  const cleanup = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      if (audioRef.current.src) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+      audioRef.current.src = '';
+    }
+  };
+
+  const setupAudioPlayback = (audioUrl: string) => {
+    cleanup();
+    audioRef.current.src = audioUrl;
+
+    audioRef.current.oncanplay = () => {
+      audioRef.current.play();
+      setPlaybackState(AudioPlaybackState.PLAYING);
+      if (onPlaybackStart) onPlaybackStart();
+    };
+
+    audioRef.current.onended = () => {
+      setPlaybackState(AudioPlaybackState.COMPLETED);
+      if (onComplete) onComplete();
+      URL.revokeObjectURL(audioUrl);
+    };
+
+    audioRef.current.onerror = () => {
+      setPlaybackState(AudioPlaybackState.ERROR);
+      setError('Error playing audio');
+      URL.revokeObjectURL(audioUrl);
+    };
+  };
 
   const togglePlayPause = () => {
-    if (audioRef.current.src) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current.play();
-        setIsPlaying(true);
-      }
+    if (playbackState === AudioPlaybackState.PLAYING) {
+      audioRef.current.pause();
+      setPlaybackState(AudioPlaybackState.PAUSED);
+    } else if (playbackState === AudioPlaybackState.PAUSED) {
+      audioRef.current.play();
+      setPlaybackState(AudioPlaybackState.PLAYING);
     }
   };
 
@@ -192,11 +103,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
     if (audioRef.current.src) {
       audioRef.current.currentTime = 0;
       audioRef.current.play();
-      setIsPlaying(true);
+      setPlaybackState(AudioPlaybackState.PLAYING);
     }
   };
 
-  if (!narrative || (!isLoading && !hasAudio)) {
+  if (!narrative) {
     return null;
   }
 
@@ -210,28 +121,30 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete }) => {
     }}>
       <IconButton 
         onClick={togglePlayPause}
-        disabled={isLoading}
+        disabled={playbackState === AudioPlaybackState.LOADING || playbackState === AudioPlaybackState.ERROR}
         color="primary"
         size="large"
       >
-        {isLoading ? (
+        {playbackState === AudioPlaybackState.LOADING ? (
           <CircularProgress size={24} />
-        ) : isPlaying ? (
+        ) : playbackState === AudioPlaybackState.PLAYING ? (
           <Pause />
         ) : (
           <PlayArrow />
         )}
       </IconButton>
+
       <IconButton
         onClick={restart}
-        disabled={isLoading || !audioRef.current.src}
+        disabled={!audioRef.current.src || playbackState === AudioPlaybackState.LOADING}
         color="secondary"
         size="large"
       >
         <RestartAlt />
       </IconButton>
+
       <Box sx={{ flexGrow: 1 }}>
-        {isLoading && (
+        {playbackState === AudioPlaybackState.LOADING && (
           <Typography variant="body2" color="text.secondary">
             Loading audio...
           </Typography>

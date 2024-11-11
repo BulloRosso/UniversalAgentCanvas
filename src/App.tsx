@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, ThemeProvider, createTheme } from '@mui/material';
 import { Canvas } from './components/Canvas/Canvas';
 import { Chat } from './components/Chat/Chat';
@@ -43,7 +43,9 @@ const AppContent: React.FC = () => {
   const [currentStepHandler, setCurrentStepHandler] = React.useState<(() => void) | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const { sendMessage } = useWebSocket();
-
+  const [lastProcessedLessonId, setLastProcessedLessonId] = useState<string | null>(null);
+  const processedEventsRef = useRef(new Set<string>());
+  
   const handleMessageClick = useCallback((message: ChatMessage) => {
     if (!message.isUser) {
       setSelectedMessage(message);
@@ -68,16 +70,7 @@ const AppContent: React.FC = () => {
   }, [currentStepHandler]);
 
   const initializeDiscussion = useCallback(async (subsystemPrompt: string, prompt: string) => {
-    // Add the initial prompt as a system message
-    const promptMessage: ChatMessage = {
-      id: Date.now().toString(),
-      content: prompt,
-      timestamp: new Date(),
-      isUser: false,
-      isTyping: false
-    };
-    setMessages(prev => [...prev, promptMessage]);
-
+    
     try {
       // First, trigger the audio narration
       EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
@@ -97,13 +90,29 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    console.log('[App] Setting up LECTURE_PART_FINISHED listener');
+
     const unsubscribe = EventBus.getInstance().subscribe(
       EVENTS.LECTURE_PART_FINISHED,
       (event: CustomEvent<UIEventType>) => {
         const lecture = event.detail as unknown as Lesson;
-        console.log('Starting interactive part of the lecture:', lecture.discussion.prompt);
+        console.log('[App] Received LECTURE_PART_FINISHED event:', {
+          lessonId: lecture.lessonId,
+          title: lecture.title,
+          alreadyProcessed: processedEventsRef.current.has(lecture.lessonId)
+        });
 
-        // Initialize the discussion with the prompt
+        // Guard against duplicate events
+        if (processedEventsRef.current.has(lecture.lessonId)) {
+          console.log('[App] Already processed lesson:', lecture.lessonId);
+          return;
+        }
+
+        console.log('[App] Processing lecture completion:', lecture.lessonId);
+        processedEventsRef.current.add(lecture.lessonId);
+
+        console.log('[App] Starting interactive part of the lecture:', lecture.discussion.prompt);
+
         const subsystemPrompt = `We are now starting the interactive part of the lecture "${lecture.title}". The question to the students was 
         ----------------
         ${lecture.discussion.prompt}
@@ -111,14 +120,26 @@ const AppContent: React.FC = () => {
         Please guide the students through the lecture by answering questions and providing examples.
         DO NOT show slides or ask questions in the response to this prompt!
         `;
-        
-        initializeDiscussion(subsystemPrompt, lecture.discussion.prompt);
+
+        // Wrap in setTimeout to ensure state updates have completed
+        setTimeout(() => {
+          initializeDiscussion(subsystemPrompt, lecture.discussion.prompt);
+        }, 0);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      console.log('[App] Cleaning up LECTURE_PART_FINISHED listener');
+      unsubscribe();
+      processedEventsRef.current.clear();
+    };
   }, [initializeDiscussion]);
 
+  const onPlayLesson = useCallback((lessonId: string) => {
+    console.log('[App] Clearing processed events for new lesson:', lessonId);
+    processedEventsRef.current.clear();
+  }, []);
+  
   const handleChatMessage = useCallback((content: string, isUser: boolean = false) => {
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -130,6 +151,10 @@ const AppContent: React.FC = () => {
     setMessages(prev => [...prev, newMessage]);
   }, []);
 
+  const handlePlayLesson = useCallback((lessonId: string) => {
+    processedEventsRef.current.clear();
+  }, []);
+  
   const handleMessagesUpdate = useCallback((newMessages: ChatMessage[]) => {
     setMessages(newMessages);
   }, []);
