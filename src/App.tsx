@@ -12,8 +12,9 @@ import { StudentProvider } from './context/StudentContext';
 import { ChatMessage } from './types/message';
 import { Lesson } from './types/lecture';
 import profImage from './assets/robo-prof.png';
-import defaultUserIcon from './assets/user-icon.png'; // You'll need to add this image
+import defaultUserIcon from './assets/user-icon.png';
 import { EventBus, EVENTS, UIEventType } from './events/CustomEvents';
+import { WebSocketProvider, useWebSocket } from './context/WebSocketContext';
 
 const theme = createTheme({
   typography: {
@@ -30,30 +31,32 @@ const defaultConfig = {
   chatAgentIcon: profImage,
 };
 
-export const App: React.FC = () => {
+// Inner component that has access to WebSocket context
+const AppContent: React.FC = () => {
   const [contentRequest, setContentRequest] = React.useState<{
     title: string;
     url: string;
     type: 'video' | 'iframe' | 'slide' | 'image';
   } | null>(null);
 
-  
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [currentStepHandler, setCurrentStepHandler] = React.useState<(() => void) | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
+  const { sendMessage } = useWebSocket();
 
   const handleMessageClick = useCallback((message: ChatMessage) => {
-    if (!message.isUser) {  // Only handle assistant messages
+    if (!message.isUser) {
       setSelectedMessage(message);
     }
   }, []);
-  
+
   const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => {
     console.log('Setting content request:', { url, type });
     setContentRequest({ 
-       title: type === 'video' ? 'Video' : type === 'image' ? 'Image' : 'Content',
+      title: type === 'video' ? 'Video' : type === 'image' ? 'Image' : 'Content',
       url, 
-      type });
+      type 
+    });
     setCurrentStepHandler(() => onComplete);
   };
 
@@ -64,135 +67,183 @@ export const App: React.FC = () => {
     }
   }, [currentStepHandler]);
 
+  const initializeDiscussion = useCallback(async (subsystemPrompt: string, prompt: string) => {
+    // Add the initial prompt as a system message
+    const promptMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: prompt,
+      timestamp: new Date(),
+      isUser: false,
+      isTyping: false
+    };
+    setMessages(prev => [...prev, promptMessage]);
+
+    try {
+      // First, trigger the audio narration
+      EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
+        cmd: 'ui_narrative',
+        narrative: prompt,
+        tool_call_id: `narrative-${Date.now()}`,
+        title: '',  // Required by the type but not used for narrative
+        url: ''     // Required by the type but not used for narrative
+      });
+
+      // Then send the prompt via WebSocket
+      console.log('Sending initial prompt to backend:', subsystemPrompt);
+      await sendMessage(subsystemPrompt);
+    } catch (error) {
+      console.error('Error in discussion initialization:', error);
+    }
+  }, []);
+
   useEffect(() => {
-    // Subscribe to UI commands
     const unsubscribe = EventBus.getInstance().subscribe(
       EVENTS.LECTURE_PART_FINISHED,
       (event: CustomEvent<UIEventType>) => {
         const lecture = event.detail as unknown as Lesson;
         console.log('Starting interactive part of the lecture:', lecture.discussion.prompt);
 
-        // TODO inital prompt to set the stage - should emit chat inviting student(s) to participate
+        // Initialize the discussion with the prompt
+        const subsystemPrompt = `We are now starting the interactive part of the lecture "${lecture.title}". The question to the students was 
+        ----------------
+        ${lecture.discussion.prompt}
+        ----------------
+        Please guide the students through the lecture by answering questions and providing examples.
+        DO NOT show slides or ask questions in the response to this prompt!
+        `;
+        
+        initializeDiscussion(subsystemPrompt, lecture.discussion.prompt);
       }
     );
 
-    // Cleanup subscription
     return () => unsubscribe();
-  }, []);
- 
+  }, [initializeDiscussion]);
+
   const handleChatMessage = useCallback((content: string, isUser: boolean = false) => {
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
       content,
       timestamp: new Date(),
       isUser,
-      isTyping: false  
+      isTyping: false
     };
     setMessages(prev => [...prev, newMessage]);
   }, []);
 
   const handleMessagesUpdate = useCallback((newMessages: ChatMessage[]) => {
-    // console.log('App: Updating messages:', newMessages);
     setMessages(newMessages);
   }, []);
-  
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        backgroundColor: '#f0f0f0',
+      }}
+    >
+      <Box 
+        sx={{ 
+          width: '60%', 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          padding: 2 
+        }}
+      >
+        <Box 
+          className="canvas-container"
+          sx={{ 
+            height: '60%', 
+            backgroundColor: 'white', 
+            borderRadius: 2, 
+            boxShadow: 1, 
+            overflow: 'hidden', 
+            marginBottom: 2,
+            '&:fullscreen': {
+              height: '100vh',
+              width: '100vw',
+              borderRadius: 0,
+              padding: 0,
+              backgroundColor: 'black'
+            },
+            '&::-webkit-full-screen': {
+              height: '100vh',
+              width: '100vw',
+              borderRadius: 0,
+              padding: 0,
+              backgroundColor: 'black'
+            }
+          }}>
+          <Canvas 
+            contentRequest={contentRequest} 
+            onVideoComplete={handleVideoComplete}
+          />
+        </Box>
+        <Box 
+          sx={{ 
+            flex: 1, 
+            backgroundColor: 'white', 
+            borderRadius: 2, 
+            boxShadow: 1, 
+            overflow: 'hidden' 
+          }}
+        >
+          <ControlPane 
+            onDisplayContent={handleDisplayContent}
+            onChatMessage={(message: ChatMessage) => setMessages(prev => [...prev, message])}
+            selectedMessage={selectedMessage}  
+            onResetSelectedMessage={() => setSelectedMessage(null)}  
+          />
+        </Box>
+      </Box>
+      <Box 
+        sx={{ 
+          width: '40%', 
+          height: '100%', 
+          padding: 2, 
+          paddingLeft: 0 
+        }}
+      >
+        <Box 
+          sx={{ 
+            height: '100%', 
+            backgroundColor: 'white', 
+            borderRadius: 2, 
+            boxShadow: 1, 
+            overflow: 'hidden' 
+          }}
+        >
+          <Chat 
+            config={defaultConfig}
+            messages={messages}
+            onMessageUpdate={handleMessagesUpdate}
+            onMessageClick={handleMessageClick}  
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+// Main App component
+export const App: React.FC = () => {
+  const handleWebSocketMessage = useCallback((wsMessage: any) => {
+    console.log('WebSocket response to initial prompt:', wsMessage);
+  }, []);
+
   return (
     <I18nextProvider i18n={i18n}>
       <StudentProvider>
-      <LectureProvider>
-        <ThemeProvider theme={theme}>
-          <Box
-            sx={{
-              display: 'flex',
-              width: '100vw',
-              height: '100vh',
-              overflow: 'hidden',
-              backgroundColor: '#f0f0f0',
-            }}
-          >
-            <Box 
-              sx={{ 
-                width: '60%', 
-                height: '100%', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                padding: 2 
-              }}
-            >
-              <Box 
-                className="canvas-container"
-                sx={{ 
-                  height: '60%', 
-                  backgroundColor: 'white', 
-                  borderRadius: 2, 
-                  boxShadow: 1, 
-                  overflow: 'hidden', 
-                  marginBottom: 2,
-                  '&:fullscreen': {
-                    height: '100vh',
-                    width: '100vw',
-                    borderRadius: 0,
-                    padding: 0,
-                    backgroundColor: 'black'
-                  },
-                  '&::-webkit-full-screen': {
-                    height: '100vh',
-                    width: '100vw',
-                    borderRadius: 0,
-                    padding: 0,
-                    backgroundColor: 'black'
-                  }
-                }}>
-                <Canvas 
-                  contentRequest={contentRequest} 
-                  onVideoComplete={handleVideoComplete}
-                />
-              </Box>
-              <Box 
-                sx={{ 
-                  flex: 1, 
-                  backgroundColor: 'white', 
-                  borderRadius: 2, 
-                  boxShadow: 1, 
-                  overflow: 'hidden' 
-                }}
-              >
-                <ControlPane 
-                  onDisplayContent={handleDisplayContent}
-                  onChatMessage={(message: ChatMessage) => setMessages(prev => [...prev, message])}
-                  selectedMessage={selectedMessage}  
-                  onResetSelectedMessage={() => setSelectedMessage(null)}  
-                />
-              </Box>
-            </Box>
-            <Box 
-              sx={{ 
-                width: '40%', 
-                height: '100%', 
-                padding: 2, 
-                paddingLeft: 0 
-              }}
-            >
-              <Box 
-                sx={{ 
-                  height: '100%', 
-                  backgroundColor: 'white', 
-                  borderRadius: 2, 
-                  boxShadow: 1, 
-                  overflow: 'hidden' 
-                }}
-              >
-                <Chat 
-                  config={defaultConfig}
-                  messages={messages}
-                  onMessageUpdate={handleMessagesUpdate}
-                  onMessageClick={handleMessageClick}  
-                />
-              </Box>
-            </Box>
-          </Box>
-        </ThemeProvider>
-      </LectureProvider>
+        <LectureProvider>
+          <ThemeProvider theme={theme}>
+            <WebSocketProvider onMessage={handleWebSocketMessage}>
+              <AppContent />
+            </WebSocketProvider>
+          </ThemeProvider>
+        </LectureProvider>
       </StudentProvider>
     </I18nextProvider>
   );
