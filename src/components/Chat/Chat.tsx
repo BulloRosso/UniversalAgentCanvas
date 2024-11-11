@@ -44,7 +44,7 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
   useEffect(() => {
     const handleAnswerEvent = (event: CustomEvent<AnswerEventType>) => {
       const { responseText } = event.detail;
-
+/*
       // Create a new message for the answer response
       const answerMessage: ChatMessage = {
         id: `answer-${Date.now()}`,
@@ -56,11 +56,11 @@ export const Chat: React.FC<ChatProps> = ({ config, messages, onMessageUpdate, o
 
       // Update messages with the new answer response
       onMessageUpdate([...messagesRef.current, answerMessage]);
-
+*/
       // Trigger audio narration for the answer response
       EventBus.getInstance().publish(EVENTS.UI_COMMAND, {
         cmd: 'ui_narrative',
-        narrative: responseText.replace(/[#*]/g, ''), // Remove markdown symbols for narration
+        narrative: responseText, // .replace(/[#*]/g, ''), // Remove markdown symbols for narration
         tool_call_id: `narrative-${Date.now()}`,
         title: '', // Add empty string for required title
         url: ''    // Add empty string for required url

@@ -19,7 +19,7 @@ import {
   DraggableProvided,
   DraggableStateSnapshot 
 } from 'react-beautiful-dnd';
-import { EventBus } from '../../events/CustomEvents';
+import { EventBus, EVENTS } from '../../events/CustomEvents';
 
 interface Choice {
   id: number;
@@ -189,10 +189,10 @@ const TestQuestion: React.FC<QuestionProps> = ({
         break;
     }
   
-    eventBus.publish('answer-event', {
+    eventBus.publish(EVENTS.ANSWER_EVENT, {
       questionId: id,
       points: isCorrect ? points : 0,
-      responseText: generateResponseText(isCorrect)
+      responseText: generateResponseText(isCorrect),
     });
 
     setIsSubmitted(true);
