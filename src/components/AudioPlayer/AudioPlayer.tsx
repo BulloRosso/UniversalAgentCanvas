@@ -31,11 +31,16 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete, onPlay
       return;
     }
 
+    // Reset error state when new narrative is received
+    setError(null);
+    setPlaybackState(AudioPlaybackState.LOADING);
+
     const narrativeId = audioPlaybackService.requestNarrative(narrative);
     currentNarrativeId.current = narrativeId;
 
     const unsubscribeReady = eventBus.subscribe(EVENTS.NARRATIVE_READY, (event: CustomEvent) => {
       if (event.detail.narrativeId === narrativeId) {
+        setError(null); // Clear any previous errors
         setupAudioPlayback(event.detail.audioUrl);
       }
     });
@@ -45,6 +50,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete, onPlay
         setPlaybackState(event.detail.state);
         if (event.detail.error) {
           setError(event.detail.error);
+        } else {
+          setError(null); // Clear error when state changes successfully
         }
       }
     });
@@ -63,26 +70,37 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete, onPlay
         URL.revokeObjectURL(audioRef.current.src);
       }
       audioRef.current.src = '';
+      setError(null); // Clear error state during cleanup
     }
   };
 
   const setupAudioPlayback = (audioUrl: string) => {
     cleanup();
+    setError(null); // Clear any existing errors
+
     audioRef.current.src = audioUrl;
 
     audioRef.current.oncanplay = () => {
-      audioRef.current.play();
+      setError(null); // Clear errors when audio can play
+      audioRef.current.play()
+        .catch(err => {
+          console.error('Error starting playback:', err);
+          setError('Error starting audio playback');
+          setPlaybackState(AudioPlaybackState.ERROR);
+        });
       setPlaybackState(AudioPlaybackState.PLAYING);
       if (onPlaybackStart) onPlaybackStart();
     };
 
     audioRef.current.onended = () => {
       setPlaybackState(AudioPlaybackState.COMPLETED);
+      setError(null); // Clear any errors on successful completion
       if (onComplete) onComplete();
       URL.revokeObjectURL(audioUrl);
     };
 
-    audioRef.current.onerror = () => {
+    audioRef.current.onerror = (e) => {
+      console.error('Audio playback error:', e);
       setPlaybackState(AudioPlaybackState.ERROR);
       setError('Error playing audio');
       URL.revokeObjectURL(audioUrl);
@@ -94,15 +112,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ narrative, onComplete, onPlay
       audioRef.current.pause();
       setPlaybackState(AudioPlaybackState.PAUSED);
     } else if (playbackState === AudioPlaybackState.PAUSED) {
-      audioRef.current.play();
+      audioRef.current.play()
+        .catch(err => {
+          console.error('Error resuming playback:', err);
+          setError('Error resuming audio playback');
+          setPlaybackState(AudioPlaybackState.ERROR);
+        });
       setPlaybackState(AudioPlaybackState.PLAYING);
     }
   };
 
   const restart = () => {
     if (audioRef.current.src) {
+      setError(null); // Clear errors when restarting
       audioRef.current.currentTime = 0;
-      audioRef.current.play();
+      audioRef.current.play()
+        .catch(err => {
+          console.error('Error restarting playback:', err);
+          setError('Error restarting audio playback');
+          setPlaybackState(AudioPlaybackState.ERROR);
+        });
       setPlaybackState(AudioPlaybackState.PLAYING);
     }
   };

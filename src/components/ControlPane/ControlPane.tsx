@@ -34,7 +34,7 @@ import { ChatMessage } from '../../types/message';
 import { lecturePlayerService } from '../../services/lecturePlayerService';
 import AudioPlayer, { AudioPlayerProps } from '../AudioPlayer/AudioPlayer';  
 import QRCode from '..//QRCode/QRCode';
-import { EventBus, EVENTS, UIEventType, AudioPlaybackState } from '../../events/CustomEvents';
+import { EventBus, EVENTS, UIEventType, PlaybackStateChangeEvent, AudioPlaybackState } from '../../events/CustomEvents';
 import { useStudent } from '../../context/StudentContext';
 
 interface ControlPaneProps {
