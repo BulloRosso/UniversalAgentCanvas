@@ -22,6 +22,7 @@ import {
   Language, 
   VideoLibrary,
   PlayArrow,
+  AccountCircle,
   VolumeOff,
   VolumeUp,
   Settings
@@ -36,6 +37,7 @@ import AudioPlayer, { AudioPlayerProps } from '../AudioPlayer/AudioPlayer';
 import QRCode from '..//QRCode/QRCode';
 import { EventBus, EVENTS, UIEventType, PlaybackStateChangeEvent, AudioPlaybackState } from '../../events/CustomEvents';
 import { useStudent } from '../../context/StudentContext';
+import StudentProfile from '../StudentProfile/StudentProfile';
 
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => void;
@@ -72,6 +74,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   // Add a ref to track if we've already finished this lesson
   const lessonCompletionRef = useRef<string | null>(null);
   const completionInProgressRef = useRef(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
     isPlaying: false,
@@ -391,12 +394,20 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         <Typography variant="h6" component="h2">
           {lecture?.title || t('controlPanel')}
         </Typography>
-        <IconButton
-          onClick={() => setShowDebugControls(prev => !prev)}
-          size="small"
-        >
-          <Settings />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            onClick={() => setProfileOpen(true)}
+            size="small"
+          >
+            <AccountCircle />
+          </IconButton>
+          <IconButton
+            onClick={() => setShowDebugControls(prev => !prev)}
+            size="small"
+          >
+            <Settings />
+          </IconButton>
+        </Box>
       </Box>
 
       <Divider sx={{ mb: 2 }} />
@@ -545,6 +556,10 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         onPlaybackStart={handleAudioPlaybackStart}
       />
       </Box> 
+      <StudentProfile 
+        open={profileOpen} 
+        onClose={() => setProfileOpen(false)} 
+      />
     </Box>
   );
 };

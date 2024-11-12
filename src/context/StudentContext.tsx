@@ -8,6 +8,7 @@ interface AnsweredQuestion {
 }
 
 interface StudentState {
+  studentId: string;
   name: string;
   location: string;
   activeLecture: string;
@@ -18,6 +19,7 @@ interface StudentState {
 }
 
 interface StudentContextType extends StudentState {
+  setStudentId: (name: string) => void;
   setName: (name: string) => void;
   setLocation: (location: string) => void;
   setActiveLecture: (lecture: string) => void;
@@ -66,6 +68,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   const { t } = useTranslation();
   const [state, setState] = useState<StudentState>({
+    studentId: 'std21a',
     name: 'Ralph',
     location: 'Yerevan',
     activeLecture: '',
@@ -89,6 +92,10 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }
 
+  const setStudentId = (studentId: string) => {
+    setState(prev => ({ ...prev, studentId }));
+  };
+  
   const setLocation = (location: string) => {
     setState(prev => ({ ...prev, location }));
   };
@@ -185,6 +192,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         ...state,
         setName,
+        setStudentId,
         setLocation,
         setActiveLecture,
         setActiveLesson,

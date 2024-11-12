@@ -10,6 +10,19 @@ const initI18n = async () => {
       resources: {
         hy: {
           translation: {
+
+            // Student profile
+            "studentProfile": "Ուսանողի պրոֆիլ",
+            "basicInformation": "Հիմնական տեղեկություն",
+            "studentId": "Ուսանողի ID",
+            "name": "Անուն",
+            "location": "Գտնվելու վայրը",
+            "currentProgress": "Ընթացիկ առաջընթաց",
+            "activeLecture": "Ակտիվ դասախոսություն",
+            "activeLesson": "Ակտիվ դաս",
+            "answeredQuestions": "Պատասխանված հարցեր",
+            "noQuestionsAnswered": "Դեռ պատասխանված հարցեր չկան",
+            
             // Control Panel
             "homework": "Խնդրում եմ սկանավորեք ձեր տնային աշխատանքը",
             "tutor": "ԱԹ ուսուցիչ",
@@ -57,6 +70,18 @@ const initI18n = async () => {
         },
         en: {
           translation: {
+            // Student profile
+             "studentProfile": "Student Profile",
+              "basicInformation": "Basic Information",
+              "studentId": "Student ID",
+              "name": "Name",
+              "location": "Location",
+              "currentProgress": "Current Progress",
+              "activeLecture": "Active Lecture",
+              "activeLesson": "Active Lesson",
+              "answeredQuestions": "Answered Questions",
+              "noQuestionsAnswered": "No questions answered yet",
+            
             // Control Panel
             "tutor": "AI Tutor",
             "homework": "Please scan for your homework",
@@ -107,6 +132,19 @@ const initI18n = async () => {
         de: {
           translation: {
             "tutor": "AI Tutor",
+
+            // Student profile
+            "studentProfile": "Studentenprofil",
+            "basicInformation": "Grundinformationen",
+            "studentId": "Studenten-ID",
+            "name": "Name",
+            "location": "Standort",
+            "currentProgress": "Aktueller Fortschritt",
+            "activeLecture": "Aktive Vorlesung",
+            "activeLesson": "Aktive Lektion",
+            "answeredQuestions": "Beantwortete Fragen",
+            "noQuestionsAnswered": "Noch keine Fragen beantwortet",
+            
             // Control Panel
             "homework": "Euer Link für die Hausaufgaben - bitte scannen",
             "controlPanel": "Kontrollzentrum",
