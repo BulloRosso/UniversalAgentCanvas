@@ -16,15 +16,14 @@ import {
   Alert,
   IconButton,
   SelectChangeEvent,
-  LinearProgress
+  
 } from '@mui/material';
 import { 
   Language, 
   VideoLibrary,
   PlayArrow,
   AccountCircle,
-  VolumeOff,
-  VolumeUp,
+  Assessment,
   Settings
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +37,7 @@ import QRCode from '..//QRCode/QRCode';
 import { EventBus, EVENTS, UIEventType, PlaybackStateChangeEvent, AudioPlaybackState } from '../../events/CustomEvents';
 import { useStudent } from '../../context/StudentContext';
 import StudentProfile from '../StudentProfile/StudentProfile';
+import KnowledgeEvaluation from '../KnowledgeEvaluation/KnowledgeEvaluation';
 
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => void;
@@ -75,6 +75,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   const lessonCompletionRef = useRef<string | null>(null);
   const completionInProgressRef = useRef(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
   
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
     isPlaying: false,
@@ -396,6 +397,12 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton
+            onClick={() => setEvaluationOpen(true)}
+            size="small"
+          >
+            <Assessment />
+          </IconButton>
+          <IconButton
             onClick={() => setProfileOpen(true)}
             size="small"
           >
@@ -559,6 +566,10 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       <StudentProfile 
         open={profileOpen} 
         onClose={() => setProfileOpen(false)} 
+      />
+      <KnowledgeEvaluation 
+        open={evaluationOpen}
+        onClose={() => setEvaluationOpen(false)} 
       />
     </Box>
   );
