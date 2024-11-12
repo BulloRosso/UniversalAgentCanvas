@@ -99,7 +99,7 @@ const KnowledgeEvaluation: React.FC<KnowledgeEvaluationProps> = ({ open, onClose
             {
               min: 0,
               max: 100,
-              tickFormatter: (value) => `${value}%`
+              
             }
           ]}
           dataset={chartData}
