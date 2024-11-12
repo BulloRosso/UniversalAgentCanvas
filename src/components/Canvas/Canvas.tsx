@@ -20,6 +20,8 @@ import { EventBus, EVENTS, UIEventType, AnswerEventType } from '../../events/Cus
 import TestQuestion from './TestQuestion';
 import axios from 'axios';
 import { useStudent } from '../../context/StudentContext';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -79,7 +81,14 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState('');
   const student = useStudent(); 
-  
+  const [appMode, setAppMode] = React.useState('classroom');
+
+  const handleAppModeChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newAppMode: string,
+  ) => {
+    setAppMode(newAppMode);
+  };
   // Fetch questions from the API
   const fetchQuestions = useCallback(async () => {
     if (questions.length > 0) return; // Return if questions are already loaded
@@ -599,7 +608,18 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
                 >
                   { /* }
                   <TestQuestion {...question} /> */}
-                   <img src={profImage} style={{ height: '80%'}} alt="No content" />
+                   <img src={profImage} style={{ height: '70%'}} alt="No content" />
+                  <br/>
+                  <ToggleButtonGroup
+                    color="primary"
+                    value={appMode}
+                    exclusive
+                    onChange={handleAppModeChange}
+                    aria-label="Platform"
+                  >
+                    <ToggleButton value="classroom">Classroom</ToggleButton>
+                    <ToggleButton value="self-study">Self-study</ToggleButton>
+                  </ToggleButtonGroup>
                 </Box>
               )}
             </Box>
