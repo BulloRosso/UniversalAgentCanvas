@@ -8,7 +8,7 @@ import './i18n/i18n';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n/i18n';
 import { LectureProvider } from './context/LectureContext';
-import { StudentProvider } from './context/StudentContext';
+import { StudentProvider, useStudent  } from './context/StudentContext';
 import { ChatMessage } from './types/message';
 import { Lesson } from './types/lecture';
 import profImage from './assets/robo-prof.png';
@@ -38,20 +38,63 @@ const AppContent: React.FC = () => {
     url: string;
     type: 'video' | 'iframe' | 'slide' | 'image';
   } | null>(null);
-
+ 
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [currentStepHandler, setCurrentStepHandler] = React.useState<(() => void) | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const { sendMessage } = useWebSocket();
   const [lastProcessedLessonId, setLastProcessedLessonId] = useState<string | null>(null);
   const processedEventsRef = useRef(new Set<string>());
-  
+  const student = useStudent();
   const handleMessageClick = useCallback((message: ChatMessage) => {
     if (!message.isUser) {
       setSelectedMessage(message);
     }
   }, []);
 
+  // Function to handle posting answered questions
+  const postAnsweredQuestion = async (answerEvent: AnswerEventType) => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const studentId = student.studentId || 'rg8212';
+
+    try {
+      const payload = [{
+        lectureId: student.activeLecture || 'OCR-101',
+        category: answerEvent.category,
+        correctAnswer: answerEvent.points > 0
+      }];
+
+      const response = await fetch(`${apiUrl}api/students/${studentId}/addAnsweredQuestions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log('Successfully posted answer:', await response.json());
+    } catch (error) {
+      console.error('Error posting answered question:', error);
+    }
+  };
+
+  // Set up event listener for ANSWER_EVENT
+  useEffect(() => {
+    const unsubscribe = EventBus.getInstance().subscribe(
+      EVENTS.ANSWER_EVENT,
+      (event: CustomEvent<AnswerEventType>) => {
+        console.log('Received answer event:', event.detail);
+        postAnsweredQuestion(event.detail);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+  
   const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => {
     console.log('Setting content request:', { url, type });
     setContentRequest({ 

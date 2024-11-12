@@ -30,6 +30,7 @@ interface QuestionProps {
   id: string;
   question: string;
   type: 'single-choice' | 'multiple-choice' | 'drag-and-drop';
+  category: string;
   choices: Choice[];
   answerId: number[];
   points: number;
@@ -54,6 +55,7 @@ const TestQuestion: React.FC<QuestionProps> = ({
   id,
   question,
   type,
+  category,
   choices,
   answerId,
   points
@@ -191,6 +193,7 @@ const TestQuestion: React.FC<QuestionProps> = ({
   
     eventBus.publish(EVENTS.ANSWER_EVENT, {
       questionId: id,
+      category: category,
       points: isCorrect ? points : 0,
       responseText: generateResponseText(isCorrect),
     });

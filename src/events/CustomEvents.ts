@@ -58,6 +58,7 @@ export type UIEventType = {
 
 export type AnswerEventType = {
   questionId: string;
+  category: string;
   points: number;
   responseText: string;
 };
