@@ -13,7 +13,7 @@ import { ChatMessage } from './types/message';
 import { Lesson } from './types/lecture';
 import profImage from './assets/robo-prof.png';
 import defaultUserIcon from './assets/user-icon.png';
-import { EventBus, EVENTS, UIEventType } from './events/CustomEvents';
+import { EventBus, EVENTS, UIEventType, AnswerEventType } from './events/CustomEvents';
 import { WebSocketProvider, useWebSocket } from './context/WebSocketContext';
 
 const theme = createTheme({

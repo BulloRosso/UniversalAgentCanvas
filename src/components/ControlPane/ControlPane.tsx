@@ -38,6 +38,7 @@ import { EventBus, EVENTS, UIEventType, PlaybackStateChangeEvent, AudioPlaybackS
 import { useStudent } from '../../context/StudentContext';
 import StudentProfile from '../StudentProfile/StudentProfile';
 import KnowledgeEvaluation from '../KnowledgeEvaluation/KnowledgeEvaluation';
+import { LessonTimeline } from '../LessonTimeline/LessonTimeline';
 
 interface ControlPaneProps {
   onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => void;
@@ -396,6 +397,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
           {lecture?.title || t('controlPanel')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <LessonTimeline />
           <IconButton
             onClick={() => setEvaluationOpen(true)}
             size="small"
