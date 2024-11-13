@@ -22,7 +22,8 @@ const initI18n = async () => {
             "failed": "ձախողված է",
             "yourResults": "Ձեր արդյունքները",
             "nodata": "Տվյալներ չկան։",
-              
+            "discusion": "Քննարկում",
+            
             // Student profile
             "studentProfile": "Ուսանողի պրոֆիլ",
             "basicInformation": "Հիմնական տեղեկություն",
@@ -94,6 +95,7 @@ const initI18n = async () => {
             "failed": "failed",
             "yourResults": "Your results",
             "nodata": "No data available.",
+            "discusion": "Discusion",
             
             // Student profile
              "studentProfile": "Student Profile",
@@ -169,6 +171,7 @@ const initI18n = async () => {
             "failed": "falsche",
             "yourResults": "Deine bisherigen Ergebnisse",
             "nodata": "Keine Daten vorhahnden.",
+            "discusion": "Diskussion",
             
             // Student profile
             "studentProfile": "Studentenprofil",

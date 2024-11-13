@@ -21,6 +21,7 @@ import {
   Close
 } from '@mui/icons-material';
 import { EventBus, EVENTS, UIEventType, AnswerEventType } from '../../events/CustomEvents';
+import { useTranslation } from 'react-i18next';
 
 interface TimelineEntry {
   timestamp: string;
@@ -33,7 +34,8 @@ export const LessonTimeline: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [timelineItems, setTimelineItems] = useState<TimelineEntry[]>([]);
   const theme = useTheme();
-
+  const { t, i18n  } = useTranslation();
+  
   useEffect(() => {
     const eventBus = EventBus.getInstance();
 
