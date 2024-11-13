@@ -196,7 +196,7 @@ console.log('Received step transition event:', JSON.stringify(event));
           borderColor: 'divider'
         }}>
           <Typography variant="h6" component="h2">
-            Our Lesson
+            {t('ourLesson')}
           </Typography>
           <IconButton onClick={() => setIsOpen(false)} size="small">
             <Close />

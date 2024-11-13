@@ -23,6 +23,7 @@ const initI18n = async () => {
             "yourResults": "Ձեր արդյունքները",
             "nodata": "Տվյալներ չկան։",
             "discusion": "Քննարկում",
+            "ourLesson": "Մեր դասավանդման ժամը",
             
             // Student profile
             "studentProfile": "Ուսանողի պրոֆիլ",
@@ -96,6 +97,7 @@ const initI18n = async () => {
             "yourResults": "Your results",
             "nodata": "No data available.",
             "discusion": "Discusion",
+            "ourLesson": "Our lesson so far",
             
             // Student profile
              "studentProfile": "Student Profile",
@@ -172,6 +174,7 @@ const initI18n = async () => {
             "yourResults": "Deine bisherigen Ergebnisse",
             "nodata": "Keine Daten vorhahnden.",
             "discusion": "Diskussion",
+            "ourLesson": "Unsere Unterrichtsstunde",
             
             // Student profile
             "studentProfile": "Studentenprofil",
