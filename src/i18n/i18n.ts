@@ -11,6 +11,18 @@ const initI18n = async () => {
         hy: {
           translation: {
 
+            // categories for questions
+            "CAT-1": "OCR հիմունքներ",
+            "CAT-2": "OCR ալգորիթմներ",
+            "CAT-3": "OCR կիրառման ոլորտներ",
+            "CAT-4": "OCR ապրանքներ",
+
+            // knowledege evaluation
+            "passed": "անցած է",
+            "failed": "ձախողված է",
+            "yourResults": "Ձեր արդյունքները",
+            "nodata": "Տվյալներ չկան։",
+              
             // Student profile
             "studentProfile": "Ուսանողի պրոֆիլ",
             "basicInformation": "Հիմնական տեղեկություն",
@@ -70,6 +82,19 @@ const initI18n = async () => {
         },
         en: {
           translation: {
+
+            // categories for questions
+            "CAT-1": "OCR Fundamentals",
+            "CAT-2": "OCR Algorithms",
+            "CAT-3": "OCR Applications",
+            "CAT-4": "OCR Products",
+
+            // knowledege evaluation
+            "passed": "passed",
+            "failed": "failed",
+            "yourResults": "Your results",
+            "nodata": "No data available.",
+            
             // Student profile
              "studentProfile": "Student Profile",
               "basicInformation": "Basic Information",
@@ -133,6 +158,18 @@ const initI18n = async () => {
           translation: {
             "tutor": "AI Tutor",
 
+            // categories for questions
+            "CAT-1": "OCR Grundlagen",
+            "CAT-2": "OCR Algorithmen",
+            "CAT-3": "OCR Einsatzgebiete",
+            "CAT-4": "OCR Produkte",
+
+            // knowledege evaluation
+            "passed": "richtig",
+            "failed": "falsche",
+            "yourResults": "Deine bisherigen Ergebnisse",
+            "nodata": "Keine Daten vorhahnden.",
+            
             // Student profile
             "studentProfile": "Studentenprofil",
             "basicInformation": "Grundinformationen",
