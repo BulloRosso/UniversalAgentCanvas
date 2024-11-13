@@ -47,10 +47,10 @@ export const LessonTimeline: React.FC = () => {
           minute: '2-digit',
           hour12: false 
         });
-
+console.log('Received step transition event:', JSON.stringify(event));
         const newEntry: TimelineEntry = {
           timestamp: timeString,
-          title: `Step ${event.detail.to + 1}`,
+          title: event.detail.title,
           type: 'step'
         };
 

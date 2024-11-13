@@ -41,7 +41,7 @@ import KnowledgeEvaluation from '../KnowledgeEvaluation/KnowledgeEvaluation';
 import { LessonTimeline } from '../LessonTimeline/LessonTimeline';
 
 interface ControlPaneProps {
-  onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => void;
+  onDisplayContent: (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void, title?: string) => void;
   onChatMessage: (chatmessage: ChatMessage) => void;
   selectedMessage: ChatMessage | null;
   onResetSelectedMessage: () => void;
@@ -172,7 +172,8 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
   const playStep = async (step: Step) => {
     console.log('[ControlPane] Attempting to play step:', {
       stepNumber: step.stepNumber,
-      type: step.type
+      type: step.type,
+      title: step.title
     });
 
     // Guard against playing same step multiple times
@@ -194,6 +195,7 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
       eventBus.publish(EVENTS.STEP_TRANSITION, {
         from: playbackState.currentStepIndex,
         to: step.stepNumber - 1,
+        title: step.title,
         lessonId: playbackState.currentLesson?.lessonId || ''
       });
 
@@ -204,7 +206,8 @@ export const ControlPane: React.FC<ControlPaneProps> = ({
         step.type === 'video' ? () => {
           console.log('[ControlPane] Video content completed, triggering step completion');
           handleStepComplete();
-        } : undefined
+        } : undefined,
+        step.title
       );
 
       // For non-video content, set up narrative

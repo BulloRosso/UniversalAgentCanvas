@@ -177,7 +177,7 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
       if (youtubeId) {
         newTab = {
           id: `tab-${Date.now()}`,
-          title: t('youtubePlayer'),
+          title: content.title || t('youtubePlayer'),
           type: 'video',
           url: content.url,
           loading: true,
@@ -196,11 +196,13 @@ export const Canvas: React.FC<CanvasProps> = ({ contentRequest, onVideoComplete 
     } else {
       newTab = {
         id: `tab-${Date.now()}`,
-        title: content.type === 'video' 
-          ? t('videoPlayer') 
-          : content.type === 'image' 
-            ? content.title 
-            : t('webContent'),
+        title: content.title || (  // First check if we have a title
+          content.type === 'video' 
+            ? t('videoPlayer') 
+            : content.type === 'image' 
+              ? t('imageViewer')  
+              : t('webContent')
+        ),
         type: content.type,
         url: content.url,
         loading: true

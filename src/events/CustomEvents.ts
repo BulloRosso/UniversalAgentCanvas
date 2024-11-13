@@ -85,6 +85,13 @@ export type NarrativeRequestEvent = {
   timestamp: number;
 };
 
+export type StepTransitionEvent = {
+  from: number;
+  to: number;
+  title: string;
+  lessonId: string;
+};
+
 export type NarrativeReadyEvent = {
   narrativeId: string;
   audioUrl: string;

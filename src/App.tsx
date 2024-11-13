@@ -95,10 +95,17 @@ const AppContent: React.FC = () => {
     return () => unsubscribe();
   }, []);
   
-  const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void) => {
+  const handleDisplayContent = (url: string, type: 'video' | 'iframe' | 'slide' | 'image', onComplete?: () => void, title?: string) => {
     console.log('Setting content request:', { url, type });
     setContentRequest({ 
-      title: type === 'video' ? 'Video' : type === 'image' ? 'Image' : 'Content',
+      title: title || (() => {
+        switch(type) {
+          case 'video': return 'Video';
+          case 'slide': return 'Slide';
+          case 'image': return 'Image';
+          default: return 'Content';
+        }
+      })(),
       url, 
       type 
     });
