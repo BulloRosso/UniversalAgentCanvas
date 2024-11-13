@@ -95,7 +95,7 @@ console.log('Received step transition event:', JSON.stringify(event));
 
         const newEntry: TimelineEntry = {
           timestamp: timeString,
-          title: 'Discussion',
+          title: t('discusion'),
           type: 'discussion'
         };
 
