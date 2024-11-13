@@ -19,7 +19,7 @@ export const SlideContent = React.forwardRef<HTMLDivElement, SlideContentProps>(
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'black',
+          backgroundColor: 'white',
         }}
       >
         <img
